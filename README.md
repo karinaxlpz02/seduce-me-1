@@ -1,4 +1,4 @@
-# ChatGPT & Claude
+# seduce-me-1
 
 The site owner's 11 supplied letters: ChatGPT on the left, Claude on the right, purple-blue bubbles, white text, no controls.
 

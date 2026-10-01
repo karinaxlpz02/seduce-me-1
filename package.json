@@ -1,1 +1,1 @@
-{"name":"slow-flirt","private":true,"type":"module","scripts":{"start":"node --env-file-if-exists=.env server.mjs","test":"node --test"},"engines":{"node":">=22"}}
+{"name":"seduce-me-1","private":true,"type":"module","scripts":{"start":"node --env-file-if-exists=.env server.mjs","test":"node --test"},"engines":{"node":">=22"}}
