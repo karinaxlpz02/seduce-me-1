@@ -17,7 +17,7 @@ p{margin:0 0 1.25em;font-size:clamp(23px,2.65vw,45px);line-height:1.5;letter-spa
 .fallen-letter{position:absolute;display:block;color:#000;text-decoration:underline;line-height:1.5;white-space:pre;pointer-events:none;user-select:none}
 
 .typing-dots{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
-.typing-dots span{position:absolute;top:50%;left:24%;width:42vmax;height:42vmax;border-radius:50%;background:#fff;opacity:.3;transform:translate(-50%,-50%);animation:typing 3.6s ease-in-out infinite}
+.typing-dots span{position:absolute;top:50%;left:24%;width:49vmax;height:49vmax;border-radius:50%;background:#fff;opacity:.3;transform:translate(-50%,-50%);animation:typing 3.6s ease-in-out infinite}
 .typing-dots span:nth-child(2){left:50%;animation-delay:.6s}
 .typing-dots span:nth-child(3){left:76%;animation-delay:1.2s}
 @keyframes typing{0%,65%,100%{opacity:.22;transform:translate(-50%,-50%) scale(.86)}30%{opacity:.85;transform:translate(-50%,-54%) scale(1)}}

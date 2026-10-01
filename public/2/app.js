@@ -1,4 +1,4 @@
-import { alternativesFor, nextAssociation, matchCase } from './words.js?v=6';
+import { alternativesFor, nextAssociation, matchCase } from './words.js?v=7';
 
 await document.fonts.ready;
 
@@ -64,18 +64,8 @@ for (const paragraph of document.querySelectorAll('#text p')) {
     word.append(reserve, visible);
     const history = [token.toLowerCase()];
     let busy = false;
-    // Reserve the widest association so the word returns to the same location.
+    // Match the current word exactly: no empty slots for hypothetical replacements.
     reserve.textContent = token;
-    requestAnimationFrame(() => {
-      let widest = token;
-      let width = 0;
-      for (const alternative of alternatives) {
-        reserve.textContent = matchCase(alternative, token);
-        const measured = reserve.getBoundingClientRect().width;
-        if (measured > width) { width = measured; widest = reserve.textContent; }
-      }
-      reserve.textContent = widest;
-    });
 
     async function transform() {
       if (busy) return;
@@ -88,8 +78,7 @@ for (const paragraph of document.querySelectorAll('#text p')) {
         history.push(next.toLowerCase());
         if (history.length > 6) history.shift();
         const replacement = matchCase(next, token);
-        // Keep room for a new association reached beyond the original word's group.
-        if (replacement.length > reserve.textContent.length) reserve.textContent = replacement;
+        reserve.textContent = replacement;
         visible.textContent = replacement;
         word.setAttribute('aria-label', replacement);
         visible.style.opacity = '0';
@@ -98,9 +87,16 @@ for (const paragraph of document.querySelectorAll('#text p')) {
         await returning.finished;
         visible.style.opacity = '';
         returning.cancel();
-      } finally { busy = false; }
+      } finally {
+        visible.style.visibility = '';
+        visible.style.opacity = '';
+        busy = false;
+      }
     }
-    word.addEventListener('pointerenter', event => { if (event.pointerType !== 'touch') transform(); });
+    word.addEventListener('pointermove', event => {
+      // Layout changes can cause pointerenter without intentional interaction.
+      if (event.pointerType !== 'touch' && (event.movementX || event.movementY)) transform();
+    });
     word.addEventListener('click', transform);
     word.addEventListener('keydown', event => {
       if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); transform(); }
