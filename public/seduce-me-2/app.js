@@ -1,4 +1,4 @@
-import { alternativesFor, nextAssociation, matchCase } from './words.js?v=4';
+import { alternativesFor, nextAssociation, matchCase } from './words.js?v=5';
 
 await document.fonts.ready;
 
