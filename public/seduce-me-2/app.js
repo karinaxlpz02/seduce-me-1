@@ -1,4 +1,4 @@
-import { alternativesFor, matchCase } from './words.js?v=2';
+import { alternativesFor, nextAssociation, matchCase } from './words.js?v=3';
 
 await document.fonts.ready;
 
@@ -62,7 +62,7 @@ for (const paragraph of document.querySelectorAll('#text p')) {
     visible.className = 'visible';
     visible.textContent = token;
     word.append(reserve, visible);
-    let index = alternatives.indexOf(token.toLowerCase());
+    const history = [token.toLowerCase()];
     let busy = false;
     // Reserve the widest association so the word returns to the same location.
     reserve.textContent = token;
@@ -84,8 +84,12 @@ for (const paragraph of document.querySelectorAll('#text p')) {
         const falling = dropLetters(visible);
         visible.style.visibility = 'hidden';
         await falling;
-        index = (index + 1) % alternatives.length;
-        const replacement = matchCase(alternatives[index], token);
+        const next = nextAssociation(visible.textContent, history);
+        history.push(next.toLowerCase());
+        if (history.length > 6) history.shift();
+        const replacement = matchCase(next, token);
+        // Keep room for a new association reached beyond the original word's group.
+        if (replacement.length > reserve.textContent.length) reserve.textContent = replacement;
         visible.textContent = replacement;
         word.setAttribute('aria-label', replacement);
         visible.style.opacity = '0';
