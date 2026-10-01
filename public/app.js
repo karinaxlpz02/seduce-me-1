@@ -1,6 +1,6 @@
 import { messages } from './messages.js';
 const conversation = document.getElementById('conversation');
-const delay = 30_000;
+const delay = 5_000;
 const storageKey = 'chat-claude-letters-v1';
 let shown = 0, remaining = 0, running = false, nextAt = null;
 try {
