@@ -1,4 +1,4 @@
-import { alternativesFor, nextAssociation, matchCase } from './words.js?v=3';
+import { alternativesFor, nextAssociation, matchCase } from './words.js?v=4';
 
 await document.fonts.ready;
 
@@ -48,7 +48,7 @@ function dropLetters(source) {
 for (const paragraph of document.querySelectorAll('#text p')) {
   const tokens = paragraph.textContent.split(/([\p{L}]+(?:[’'][\p{L}]+)*)/u);
   paragraph.replaceChildren(...tokens.map(token => {
-    const alternatives = alternativesFor(token) || (/^[\p{L}]{3,}$/u.test(token) ? [token.toLowerCase()] : null);
+    const alternatives = alternativesFor(token);
     if (!alternatives) return document.createTextNode(token);
     const word = document.createElement('span');
     word.className = 'word';
