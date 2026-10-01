@@ -1,4 +1,4 @@
-import { alternativesFor, nextAssociation, matchCase } from './words.js?v=5';
+import { alternativesFor, nextAssociation, matchCase } from './words.js?v=6';
 
 await document.fonts.ready;
 
@@ -46,7 +46,7 @@ function dropLetters(source) {
   }));
 }
 for (const paragraph of document.querySelectorAll('#text p')) {
-  const tokens = paragraph.textContent.split(/([\p{L}]+(?:[’'][\p{L}]+)*)/u);
+  const tokens = paragraph.textContent.split(/([\p{L}]+(?:[’'\-][\p{L}]+)*)/u);
   paragraph.replaceChildren(...tokens.map(token => {
     const alternatives = alternativesFor(token);
     if (!alternatives) return document.createTextNode(token);
