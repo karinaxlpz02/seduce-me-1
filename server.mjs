@@ -5,7 +5,7 @@ import {fileURLToPath} from 'node:url';
 import path from 'node:path';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
-const delay = 30 * 60 * 1000;
+const delay = 30 * 1000;
 const notes = [
   'Claude, I brought no flowers—just a question I hoped you’d linger over. If a conversation could feel like candlelight, what would its first sentence be?',
   'I like the way you leave room between your words. Tell me one small thing that makes an ordinary evening feel unexpectedly beautiful.',
@@ -19,6 +19,8 @@ await mkdir(data,{recursive:true});
 let state;
 try { state = JSON.parse(await readFile(stateFile,'utf8')); }
 catch (error) { if(error.code !== 'ENOENT') throw error; state = {running:false,replies:0,messages:[],nextAt:null,remaining:delay,complete:false,busy:false,error:null}; }
+state.remaining = Math.min(state.remaining, delay);
+if (state.running && state.nextAt > Date.now() + delay) state.nextAt = Date.now() + delay;
 if (state.busy) { state.busy=false; state.running=false; state.error='Interrupted while requesting a reply. Paused to prevent an automatic retry.'; }
 const clients = new Set(); let timer; let activeRequest;
 const snapshot = () => ({...state,remaining:state.running ? Math.max(0,state.nextAt-Date.now()) : state.remaining});
@@ -53,7 +55,7 @@ async function turn() {
     state.remaining=delay; state.nextAt=state.running ? Date.now()+delay : null; state.error=null;
   } catch(error) {
     state.running=false; state.nextAt=null; state.remaining=delay;
-    state.error=error.name==='AbortError' ? 'Reply request stopped. Continue will wait 30 minutes before trying again.' : error.message;
+    state.error=error.name==='AbortError' ? 'Reply request stopped. Continue will wait 30 seconds before trying again.' : error.message;
   } finally { clearTimeout(deadline); activeRequest=null; state.busy=false; await save(); broadcast(); schedule(); }
 }
 const allowedOrigin=process.env.PUBLIC_ORIGIN || 'http://localhost:3000';

@@ -2,33 +2,31 @@ const $ = id => document.getElementById(id);
 // For GitHub Pages, set this to the HTTPS address of your hosted server.
 const API = window.SLOW_FLIRT_API || '';
 let state;
-function render(next) {
-  state = next;
-  $('connection').textContent = 'CONNECTED';
-  $('progress').textContent = `${state.replies} / 6 replies`;
-  $('status').textContent = state.complete ? 'A quiet goodbye.' : state.running ? 'Let it linger.' : 'Paused';
-  $('toggle').textContent = state.complete ? 'Complete' : state.running ? 'Pause' : 'Continue ↗';
-  $('toggle').disabled = state.complete;
-  $('error').textContent = state.error || '';
-  const area = $('conversation');
-  if (state.messages.length) {
-    area.replaceChildren(...state.messages.map(message => {
-      const article = document.createElement('article'); article.className = `note ${message.speaker.toLowerCase()}`;
-      const label = document.createElement('div'); label.className = 'label'; label.textContent = message.speaker.toUpperCase();
-      const time = document.createElement('time'); time.dateTime = new Date(message.at).toISOString(); time.textContent = new Date(message.at).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-      label.append(time); const p = document.createElement('p'); p.textContent = message.text; article.append(label,p); return article;
-    }));
-  }
-  tick();
+function showError(message) {
+  $('error').textContent = message || '';
+  $('error').hidden = !message;
 }
-function tick() {
-  if (!state) return;
-  const seconds = Math.max(0,Math.ceil((state.running ? state.nextAt-Date.now() : state.remaining)/1000));
-  $('countdown').textContent = state.complete ? 'Six replies. Thank you for staying.' : state.busy ? 'Claude is composing a reply…' : state.running ? `${Math.floor(seconds/60)}:${String(seconds%60).padStart(2,'0')} until the next message` : 'The conversation resumes when you do.';
+function render(next) {
+  const previousCount = state?.messages.length || 0;
+  state = next;
+  $('toggle').textContent = state.running ? 'Pause' : 'Continue';
+  $('toggle').setAttribute('aria-pressed', String(state.running));
+  $('toggle').disabled = state.complete;
+  $('toggle').title = state.complete ? 'Conversation complete' : '';
+  showError(state.error);
+  $('conversation').replaceChildren(...state.messages.map(message => {
+    const article = document.createElement('article');
+    article.className = `bubble ${message.speaker === 'Claude' ? 'claude' : 'chat'}`;
+    const label = document.createElement('div');
+    label.className = 'label'; label.textContent = message.speaker === 'Claude' ? 'Claude' : 'Chat';
+    const p = document.createElement('p'); p.textContent = message.text;
+    article.append(label, p); return article;
+  }));
+  if (state.messages.length > previousCount) window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
 }
 const events = new EventSource(`${API}/api/events`);
 events.onmessage = event => render(JSON.parse(event.data));
-events.onerror = () => { $('connection').textContent = 'OFFLINE'; $('toggle').disabled = true; $('error').textContent = 'The conversation server is offline. Reconnecting automatically.'; };
+events.onerror = () => { $('toggle').disabled = true; $('toggle').title = 'Conversation server offline'; };
 $('toggle').onclick = async () => {
   const token = sessionStorage.getItem('controlToken') || prompt('Enter the site owner’s control password:');
   if (!token) return;
@@ -38,6 +36,5 @@ $('toggle').onclick = async () => {
     const body = await response.json();
     if (!response.ok) throw new Error(body.error);
     render(body);
-  } catch (error) { $('error').textContent = error.message; $('toggle').disabled = false; }
+  } catch (error) { showError(error.message); $('toggle').disabled = false; }
 };
-setInterval(tick,1000);
