@@ -7,3 +7,7 @@ The first letter is rendered directly in HTML and is visible immediately, even i
 The opening letter was rejoined and the duplicated first Claude reply removed. Markdown and pasted HTML whitespace markers became plain text. No API key, backend, polling, or API charges are required.
 
 GitHub Actions publishes public/ to GitHub Pages. The older server.mjs is an optional live API prototype and is not used by the published page.
+
+## seduce-me-2
+
+A second page in this repository at /seduce-me-2/: a continuous prose collage of all eleven letters, with salutations and signatures removed. Bright pink background and black underlined text. Hover over an associated word to make it fall and fade; it slowly returns in place as a related word. Touch and keyboard interactions also work. The widest word in each association group reserves its position, and overlapping interactions are ignored until the animation ends. Reduced-motion preference uses fading without falling. No API calls or dependencies.
