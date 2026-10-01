@@ -1,10 +1,52 @@
-import { alternativesFor, matchCase } from './words.js';
+import { alternativesFor, matchCase } from './words.js?v=2';
 
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+const floor = document.createElement('div');
+floor.className = 'letter-floor';
+floor.setAttribute('aria-hidden', 'true');
+document.body.append(floor);
+let landedCount = 0;
+
+function dropLetters(source) {
+  const text = source.firstChild;
+  const font = getComputedStyle(source);
+  return Promise.all(Array.from(source.textContent).map((character, i) => {
+    const range = document.createRange();
+    const offset = Array.from(source.textContent).slice(0, i).join('').length;
+    range.setStart(text, offset);
+    range.setEnd(text, offset + character.length);
+    const rect = range.getBoundingClientRect();
+    const letter = document.createElement('span');
+    letter.className = 'fallen-letter';
+    letter.textContent = character;
+    letter.style.font = font.font;
+    letter.style.letterSpacing = font.letterSpacing;
+    letter.style.left = `${rect.left}px`;
+    letter.style.top = `${rect.top}px`;
+    floor.append(letter);
+    const drift = (Math.random() - .5) * 200;
+    const targetX = Math.max(4, Math.min(window.innerWidth - rect.width - 4, rect.left + drift));
+    const pileHeight = (landedCount++ % 5) * 5;
+    const targetY = Math.max(0, window.innerHeight - rect.height - pileHeight - 4);
+    const rotation = (Math.random() - .5) * 75;
+    const animation = letter.animate([
+      { transform: 'translate(0, 0) rotate(0deg)' },
+      { transform: `translate(${targetX - rect.left}px, ${targetY - rect.top}px) rotate(${rotation}deg)` }
+    ], {duration: reducedMotion.matches ? 0 : 1100 + Math.random() * 600, delay: reducedMotion.matches ? 0 : i * 35, easing: 'cubic-bezier(.42,0,1,1)', fill: 'forwards'});
+    return animation.finished.then(() => {
+      // Anchor landed letters to the screen floor, even while the page scrolls.
+      letter.style.left = `${targetX / window.innerWidth * 100}%`;
+      letter.style.top = 'auto';
+      letter.style.bottom = `${pileHeight + 4}px`;
+      letter.style.transform = `rotate(${rotation}deg)`;
+      animation.cancel();
+    });
+  }));
+}
 for (const paragraph of document.querySelectorAll('#text p')) {
   const tokens = paragraph.textContent.split(/([\p{L}]+(?:[’'][\p{L}]+)*)/u);
   paragraph.replaceChildren(...tokens.map(token => {
-    const alternatives = alternativesFor(token);
+    const alternatives = alternativesFor(token) || (/^[\p{L}]{3,}$/u.test(token) ? [token.toLowerCase()] : null);
     if (!alternatives) return document.createTextNode(token);
     const word = document.createElement('span');
     word.className = 'word';
@@ -37,19 +79,15 @@ for (const paragraph of document.querySelectorAll('#text p')) {
       if (busy) return;
       busy = true;
       try {
-        const rotate = (index % 2 ? -1 : 1) * 12;
-        const falling = reducedMotion.matches
-          ? [{ opacity: 1 }, { opacity: 0 }]
-          : [{ transform: 'translateY(0) rotate(0deg)', opacity: 1 }, { transform: `translateY(100px) rotate(${rotate}deg)`, opacity: 0 }];
-        const fall = visible.animate(falling, { duration: 700, easing: 'cubic-bezier(.4,0,1,1)', fill: 'forwards' });
-        await fall.finished;
+        const falling = dropLetters(visible);
+        visible.style.visibility = 'hidden';
+        await falling;
         index = (index + 1) % alternatives.length;
         const replacement = matchCase(alternatives[index], token);
         visible.textContent = replacement;
         word.setAttribute('aria-label', replacement);
-        // Cancel the falling transform while keeping the replacement invisible.
         visible.style.opacity = '0';
-        fall.cancel();
+        visible.style.visibility = '';
         const returning = visible.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 2400, delay: 450, easing: 'ease-in-out', fill: 'forwards' });
         await returning.finished;
         visible.style.opacity = '';

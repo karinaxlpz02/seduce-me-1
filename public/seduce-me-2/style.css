@@ -11,3 +11,6 @@ p{margin:0 0 1.25em;font-size:clamp(23px,2.65vw,45px);line-height:1.5;letter-spa
 .word:focus-visible{outline:2px solid #000;outline-offset:3px}
 @media(max-width:600px){main{padding:20px 18px 50px}p{font-size:24px;line-height:1.6}}
 @media(prefers-reduced-motion:reduce){.word .visible{will-change:opacity}}
+
+.letter-floor{position:fixed;inset:0;pointer-events:none;z-index:10;overflow:hidden}
+.fallen-letter{position:absolute;display:block;color:#000;text-decoration:underline;line-height:1.5;white-space:pre;pointer-events:none;user-select:none}
