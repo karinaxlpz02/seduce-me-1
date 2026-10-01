@@ -11,3 +11,5 @@ GitHub Actions publishes public/ to GitHub Pages. The older server.mjs is an opt
 ## seduce-me-2
 
 A second page in this repository at /seduce-me-2/: a continuous prose collage of all eleven letters, with salutations and signatures removed. Bright pink background and black underlined text. Hover over any word of three or more letters to drop its individual letters to the bottom of the screen. Fallen letters stay visible and accumulate. Related words slowly return in the prose as an association; other words return unchanged. Touch and keyboard interactions also work. The widest word in each association group reserves its position, and overlapping interactions are ignored until the animation ends. Reduced-motion preference places the letters on the floor immediately. No API calls or dependencies.
+
+Three oversized, overlapping white circles fill the viewport behind the prose and pulse in sequence like a typing indicator. They ignore pointer events and respect reduced-motion settings.
