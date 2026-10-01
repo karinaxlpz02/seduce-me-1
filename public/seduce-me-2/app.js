@@ -1,5 +1,7 @@
 import { alternativesFor, matchCase } from './words.js?v=2';
 
+await document.fonts.ready;
+
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 const floor = document.createElement('div');
 floor.className = 'letter-floor';
