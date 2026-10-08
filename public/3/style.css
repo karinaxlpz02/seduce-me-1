@@ -9,23 +9,18 @@ p{margin:0 0 1.25em;font-size:clamp(23px,2.65vw,45px);line-height:1.5;letter-spa
 .word>*{grid-area:1/1}
 .word .reserve{visibility:hidden;pointer-events:none;user-select:none}
 .word .visible{opacity:0;text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:.12em;transition:opacity .18s ease}
-.word-marker{position:relative;align-self:center;justify-self:center;width:.52em;height:.43em;pointer-events:none;z-index:2}
-.word-marker svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.word-marker path{fill:none;stroke:#000;stroke-width:1.2;vector-effect:non-scaling-stroke}
-.word-marker i{position:absolute;width:.13em;height:.13em;border-radius:50%;background:#000;animation:breathe 2.4s ease-in-out infinite}
-.word-marker i:nth-of-type(1){left:50%;top:0;transform:translateX(-50%);animation-delay:0s}
-.word-marker i:nth-of-type(2){left:0;bottom:0;animation-delay:-.8s}
-.word-marker i:nth-of-type(3){right:0;bottom:0;animation-delay:-1.6s}
-@keyframes breathe{0%,100%{opacity:.55;scale:.82}50%{opacity:1;scale:1.2}}
-.word-map{position:absolute;z-index:5;left:50%;bottom:50%;width:min(260px,calc(100vw - 24px));height:100px;transform:translate(-50%,0);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .14s ease,visibility .14s}
-.word-map svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
-.word-map line{stroke:#000;stroke-width:.7;vector-effect:non-scaling-stroke;opacity:.75}
-.map-word{position:absolute;left:var(--node-x);top:var(--node-y);transform:translate(-50%,-50%);padding:1px 4px;background:#ff38ba;font:12px/1.2 Arial,sans-serif;letter-spacing:0;text-decoration:none;white-space:nowrap}
-.word:hover .word-map,.word:focus .word-map{opacity:1;visibility:visible}
+.word-marker{position:relative;align-self:center;justify-self:center;width:.58em;height:.2em;pointer-events:none;z-index:2}
+.word-marker i{position:absolute;top:50%;width:.13em;height:.13em;border-radius:50%;background:#000;transform:translate(-50%,-50%) scale(.86);animation:typing-pulse 1.08s ease-in-out infinite}
+.word-marker i:nth-child(1){left:0;animation-delay:0s}
+.word-marker i:nth-child(2){left:50%;animation-delay:.18s}
+.word-marker i:nth-child(3){left:100%;animation-delay:.36s}
+@keyframes typing-pulse{0%,70%,100%{opacity:.55;transform:translate(-50%,-50%) scale(.86)}35%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}}
+.network-layer{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:visible}
+.network-layer line{stroke:#000;stroke-width:1;stroke-opacity:.34;vector-effect:non-scaling-stroke}
 .word.revealed .visible{opacity:1}
 .word.revealed .word-marker{opacity:0}
 .word.revealed .word-map{opacity:0;visibility:hidden}
 .sprinkle-letter{display:inline-block;white-space:pre}
 .word:focus-visible{outline:2px solid #000;outline-offset:3px}
-@media(max-width:600px){main{padding:20px 18px 50px}p{font-size:24px;line-height:1.6}.map-word{font-size:10px}}
+@media(max-width:600px){main{padding:20px 18px 50px}p{font-size:24px;line-height:1.6}}
 @media(prefers-reduced-motion:reduce){.word-marker i{animation:none;opacity:.8}.word .visible{will-change:opacity}}

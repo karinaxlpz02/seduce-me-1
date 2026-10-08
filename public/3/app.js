@@ -4,6 +4,40 @@ await document.fonts.ready;
 
 const revealDelay = 500;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+const networkLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+networkLayer.classList.add('network-layer');
+networkLayer.setAttribute('aria-hidden', 'true');
+document.body.append(networkLayer);
+let activeWord;
+
+function markerCenter(word) {
+  const rect = word.querySelector('.word-marker').getBoundingClientRect();
+  return [rect.left + rect.width / 2, rect.top + rect.height / 2];
+}
+
+function drawConnections(word) {
+  networkLayer.replaceChildren();
+  if (!word || word.classList.contains('revealed')) return;
+
+  const [sourceX, sourceY] = markerCenter(word);
+  const related = new Set(relatedWordsFor(word.dataset.word));
+  for (const term of related) {
+    const target = [...document.querySelectorAll('.word')].find(candidate =>
+      candidate !== word && candidate.dataset.word === term && !candidate.classList.contains('revealed')
+    );
+    if (!target) continue;
+    const [targetX, targetY] = markerCenter(target);
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', String(sourceX));
+    line.setAttribute('y1', String(sourceY));
+    line.setAttribute('x2', String(targetX));
+    line.setAttribute('y2', String(targetY));
+    networkLayer.append(line);
+  }
+}
+
+window.addEventListener('scroll', () => drawConnections(activeWord), { passive: true });
+window.addEventListener('resize', () => drawConnections(activeWord));
 
 for (const paragraph of document.querySelectorAll('#text p')) {
   const tokens = paragraph.textContent.split(/([\p{L}]+(?:[’'\-][\p{L}]+)*)/u);
@@ -25,6 +59,7 @@ for (const paragraph of document.querySelectorAll('#text p')) {
 
     const word = document.createElement('span');
     word.className = 'word';
+    word.dataset.word = token.toLowerCase();
     word.tabIndex = 0;
     word.setAttribute('role', 'button');
     word.setAttribute('aria-label', 'Hidden word. Move the pointer here for half a second to reveal its next association.');
@@ -42,36 +77,9 @@ for (const paragraph of document.querySelectorAll('#text p')) {
     const marker = document.createElement('span');
     marker.className = 'word-marker';
     marker.setAttribute('aria-hidden', 'true');
-    const markerSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    markerSvg.setAttribute('viewBox', '0 0 24 20');
-    markerSvg.innerHTML = '<path d="M12 3 4 16h16L12 3Z" />';
-    marker.append(markerSvg);
     for (let dot = 0; dot < 3; dot++) marker.append(document.createElement('i'));
 
-    const map = document.createElement('span');
-    map.className = 'word-map';
-    map.setAttribute('aria-hidden', 'true');
-    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 260 100');
-    svg.setAttribute('preserveAspectRatio', 'none');
-    const positions = [[34, 16], [130, 16], [226, 16], [34, 54], [130, 54], [226, 54]];
-    for (const [x, y] of positions) {
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', '130');
-      line.setAttribute('y1', '98');
-      line.setAttribute('x2', String(x));
-      line.setAttribute('y2', String(y));
-      svg.append(line);
-    }
-    map.append(svg);
-    for (let i = 0; i < 6; i++) {
-      const node = document.createElement('span');
-      node.className = 'map-word';
-      node.style.setProperty('--node-x', `${positions[i][0] / 260 * 100}%`);
-      node.style.setProperty('--node-y', `${positions[i][1]}px`);
-      map.append(node);
-    }
-    word.append(reserve, visible, marker, map);
+    word.append(reserve, visible, marker);
 
     const history = [token.toLowerCase()];
     let timer;
@@ -94,6 +102,7 @@ for (const paragraph of document.querySelectorAll('#text p')) {
       history.push(next.toLowerCase());
       if (history.length > 6) history.shift();
       const replacement = matchCase(next, token);
+      word.dataset.word = replacement.toLowerCase();
       reserve.textContent = replacement;
       visible.replaceChildren(...Array.from(replacement, (character, letterIndex) => {
         const letter = document.createElement('span');
@@ -107,18 +116,14 @@ for (const paragraph of document.querySelectorAll('#text p')) {
         ], { duration: reducedMotion.matches ? 0 : 420, delay: reducedMotion.matches ? 0 : letterIndex * 26, easing: 'cubic-bezier(.2,.75,.25,1)', fill: 'both' });
         return letter;
       }));
-      const related = relatedWordsFor(replacement);
-      map.querySelectorAll('.map-word').forEach((node, nodeIndex) => { node.textContent = related[nodeIndex] || ''; });
       word.setAttribute('aria-label', replacement);
       word.classList.add('revealed');
+      drawConnections(word);
     }
 
     function startTimer() {
       if (moving && !timer && !word.classList.contains('revealed')) timer = window.setTimeout(revealNext, revealDelay);
     }
-
-    const initialRelated = relatedWordsFor(token);
-    map.querySelectorAll('.map-word').forEach((node, nodeIndex) => { node.textContent = initialRelated[nodeIndex] || ''; });
 
     word.addEventListener('pointermove', event => {
       if (event.pointerType === 'touch') return;
@@ -128,9 +133,10 @@ for (const paragraph of document.querySelectorAll('#text p')) {
       moving = true;
       startTimer();
     });
-    word.addEventListener('pointerleave', hide);
-    word.addEventListener('focus', () => { moving = true; startTimer(); });
-    word.addEventListener('blur', hide);
+    word.addEventListener('pointerenter', () => { activeWord = word; drawConnections(word); });
+    word.addEventListener('pointerleave', () => { hide(); activeWord = undefined; networkLayer.replaceChildren(); });
+    word.addEventListener('focus', () => { activeWord = word; drawConnections(word); moving = true; startTimer(); });
+    word.addEventListener('blur', () => { hide(); activeWord = undefined; networkLayer.replaceChildren(); });
     word.addEventListener('keydown', event => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
