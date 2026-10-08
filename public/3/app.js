@@ -2,7 +2,7 @@ import { alternativesFor, relatedWordsFor, nextAssociation, matchCase } from './
 
 await document.fonts.ready;
 
-const revealDelay = 650;
+const revealDelay = 1000;
 const leaveDelay = 260;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const networkLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -78,7 +78,7 @@ for (const paragraph of document.querySelectorAll('#text p')) {
     word.dataset.word = token.toLowerCase();
     word.tabIndex = 0;
     word.setAttribute('role', 'button');
-    word.setAttribute('aria-label', 'Hidden word. Move the pointer here for half a second to reveal its next association.');
+    word.setAttribute('aria-label', 'Hidden word. Hover here for one second to reveal its next association.');
 
     const reserve = document.createElement('span');
     reserve.className = 'reserve';
@@ -113,6 +113,7 @@ for (const paragraph of document.querySelectorAll('#text p')) {
     let timer;
     let leaveTimer;
     let restoreTimer;
+    let sprinkleAnimations = [];
     let moving = false;
     let lastPoint;
 
@@ -121,6 +122,11 @@ for (const paragraph of document.querySelectorAll('#text p')) {
       timer = undefined;
       moving = false;
       lastPoint = undefined;
+      if (word.classList.contains('revealed')) {
+        for (const animation of sprinkleAnimations) {
+          try { animation.reverse(); } catch { animation.cancel(); }
+        }
+      }
       word.classList.remove('revealed', 'hovering');
       word.classList.add('leaving');
       clearTimeout(restoreTimer);
@@ -170,16 +176,18 @@ for (const paragraph of document.querySelectorAll('#text p')) {
       const replacement = matchCase(next, token);
       word.dataset.word = replacement.toLowerCase();
       reserve.textContent = replacement;
+      sprinkleAnimations = [];
       visible.replaceChildren(...Array.from(replacement, (character, letterIndex) => {
         const letter = document.createElement('span');
         letter.className = 'sprinkle-letter';
         letter.textContent = character;
         const x = `${(Math.random() - .5) * 22}px`;
         const y = `${-8 - Math.random() * 16}px`;
-        letter.animate([
+        const animation = letter.animate([
           { opacity: 0, transform: `translate(${x}, ${y}) scale(.65)`, filter: 'blur(3px)' },
           { opacity: 1, transform: 'translate(0, 0) scale(1)', filter: 'blur(0)' }
         ], { duration: reducedMotion.matches ? 0 : 820, delay: reducedMotion.matches ? 0 : letterIndex * 42, easing: 'cubic-bezier(.2,.75,.25,1)', fill: 'both' });
+        sprinkleAnimations.push(animation);
         return letter;
       }));
       word.setAttribute('aria-label', replacement);
