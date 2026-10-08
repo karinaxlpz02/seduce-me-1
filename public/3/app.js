@@ -11,6 +11,7 @@ networkLayer.setAttribute('aria-hidden', 'true');
 document.body.append(networkLayer);
 let activeWord;
 let connections = [];
+const connectionLines = new Map();
 
 function markerCenter(word) {
   const rect = word.querySelector('.word-marker').getBoundingClientRect();
@@ -18,18 +19,42 @@ function markerCenter(word) {
 }
 
 function drawConnections() {
-  networkLayer.replaceChildren();
-  for (const [source, target] of connections) {
-    if (source === activeWord || target === activeWord || source.classList.contains('revealed') || target.classList.contains('revealed')) continue;
+  connections.forEach(([source, target], index) => {
+    let line = connectionLines.get(index);
+    if (!line) {
+      line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      connectionLines.set(index, line);
+      networkLayer.append(line);
+    }
     const [sourceX, sourceY] = markerCenter(source);
     const [targetX, targetY] = markerCenter(target);
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', String(sourceX));
-    line.setAttribute('y1', String(sourceY));
-    line.setAttribute('x2', String(targetX));
-    line.setAttribute('y2', String(targetY));
-    networkLayer.append(line);
+    const origin = activeWord ? markerCenter(activeWord) : undefined;
+    const collapsed = activeWord && (source === activeWord || target === activeWord);
+    const coords = collapsed ? [origin[0], origin[1], origin[0], origin[1]] : [sourceX, sourceY, targetX, targetY];
+    line.style.opacity = source.classList.contains('revealed') || target.classList.contains('revealed') ? '0' : '';
+    animateLine(line, coords);
+  });
+}
+
+function animateLine(line, target) {
+  const keys = ['x1', 'y1', 'x2', 'y2'];
+  if (!line.hasAttribute('x1')) {
+    keys.forEach((key, index) => line.setAttribute(key, String(target[index])));
+    return;
   }
+  const start = keys.map(key => Number(line.getAttribute(key) ?? target[keys.indexOf(key)]));
+  if (start.every((value, index) => Math.abs(value - target[index]) < .5)) return;
+  if (line._frame) cancelAnimationFrame(line._frame);
+  const began = performance.now();
+  const duration = reducedMotion.matches ? 0 : 520;
+  const tick = now => {
+    const t = duration ? Math.min(1, (now - began) / duration) : 1;
+    const eased = 1 - Math.pow(1 - t, 3);
+    keys.forEach((key, index) => line.setAttribute(key, String(start[index] + (target[index] - start[index]) * eased)));
+    if (t < 1) line._frame = requestAnimationFrame(tick);
+    else line._frame = undefined;
+  };
+  line._frame = requestAnimationFrame(tick);
 }
 
 function buildConnections() {
@@ -133,7 +158,7 @@ for (const paragraph of document.querySelectorAll('#text p')) {
       restoreTimer = window.setTimeout(() => {
         word.classList.remove('leaving');
         marker.querySelectorAll('.extra-dot').forEach(point => point.remove());
-      }, 720);
+      }, 1250);
     }
 
     function beginHover() {
@@ -141,15 +166,15 @@ for (const paragraph of document.querySelectorAll('#text p')) {
       clearTimeout(restoreTimer);
       word.classList.remove('leaving');
       marker.querySelectorAll('.extra-dot').forEach(point => point.remove());
-      for (let dot = 0; dot < 12; dot++) {
+      for (let dot = 0; dot < 24; dot++) {
         const point = document.createElement('i');
         point.className = 'extra-dot';
         point.style.setProperty('--dot-index', dot);
-        const angle = (Math.PI * 2 * dot) / 12;
-        const radius = 12 + (dot % 3) * 5;
+        const angle = (Math.PI * 2 * dot) / 24;
+        const radius = 14 + (dot % 4) * 7;
         point.style.setProperty('--dx', `${Math.cos(angle) * radius}px`);
         point.style.setProperty('--dy', `${Math.sin(angle) * radius * .7}px`);
-        point.style.animationDelay = `${dot * 45}ms`;
+        point.style.animationDelay = `${dot * 28}ms`;
         marker.append(point);
       }
       activeWord = word;
@@ -163,7 +188,7 @@ for (const paragraph of document.querySelectorAll('#text p')) {
       clearTimeout(leaveTimer);
       leaveTimer = window.setTimeout(() => {
         hide();
-        activeWord = undefined;
+        if (activeWord === word) activeWord = undefined;
         drawConnections();
       }, leaveDelay);
     }
@@ -176,6 +201,7 @@ for (const paragraph of document.querySelectorAll('#text p')) {
       history.push(next.toLowerCase());
       if (history.length > 6) history.shift();
       const replacement = matchCase(next, token);
+      const oldWidth = word.getBoundingClientRect().width;
       word.dataset.word = replacement.toLowerCase();
       reserve.textContent = replacement;
       sprinkleAnimations = [];
@@ -183,15 +209,20 @@ for (const paragraph of document.querySelectorAll('#text p')) {
         const letter = document.createElement('span');
         letter.className = 'sprinkle-letter';
         letter.textContent = character;
-        const x = `${(Math.random() - .5) * 22}px`;
-        const y = `${-8 - Math.random() * 16}px`;
+        const x = `${(Math.random() - .5) * 10}px`;
+        const y = `${-4 - Math.random() * 6}px`;
         const animation = letter.animate([
-          { opacity: 0, transform: `translate(${x}, ${y}) scale(.65)`, filter: 'blur(3px)' },
+          { opacity: 0, transform: `translate(${x}, ${y}) scale(.94)`, filter: 'blur(1px)' },
           { opacity: 1, transform: 'translate(0, 0) scale(1)', filter: 'blur(0)' }
-        ], { duration: reducedMotion.matches ? 0 : 1400, delay: reducedMotion.matches ? 0 : letterIndex * 52, easing: 'cubic-bezier(.22,.72,.22,1)', fill: 'both' });
+        ], { duration: reducedMotion.matches ? 0 : 1450, delay: reducedMotion.matches ? 0 : letterIndex * 28, easing: 'cubic-bezier(.33,1,.68,1)', fill: 'both' });
         sprinkleAnimations.push(animation);
         return letter;
       }));
+      word.style.width = 'max-content';
+      const revealedWidth = word.getBoundingClientRect().width;
+      word.style.width = `${oldWidth}px`;
+      void word.offsetWidth;
+      requestAnimationFrame(() => { word.style.width = `${revealedWidth}px`; });
       word.setAttribute('aria-label', replacement);
       word.classList.add('revealed');
       drawConnections();
@@ -219,6 +250,9 @@ for (const paragraph of document.querySelectorAll('#text p')) {
         if (word.classList.contains('revealed')) hide();
         else { moving = true; startTimer(); }
       }
+    });
+    word.addEventListener('transitionend', event => {
+      if (event.propertyName === 'width') drawConnections();
     });
     return word;
   }));
