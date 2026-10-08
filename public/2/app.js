@@ -2,104 +2,86 @@ import { alternativesFor, nextAssociation, matchCase } from './words.js?v=7';
 
 await document.fonts.ready;
 
-const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-const floor = document.createElement('div');
-floor.className = 'letter-floor';
-floor.setAttribute('aria-hidden', 'true');
-document.body.append(floor);
-let landedCount = 0;
+const revealDelay = 1000;
 
-function dropLetters(source) {
-  const text = source.firstChild;
-  const font = getComputedStyle(source);
-  return Promise.all(Array.from(source.textContent).map((character, i) => {
-    const range = document.createRange();
-    const offset = Array.from(source.textContent).slice(0, i).join('').length;
-    range.setStart(text, offset);
-    range.setEnd(text, offset + character.length);
-    const rect = range.getBoundingClientRect();
-    const letter = document.createElement('span');
-    letter.className = 'fallen-letter';
-    letter.textContent = character;
-    letter.style.font = font.font;
-    letter.style.letterSpacing = font.letterSpacing;
-    letter.style.left = `${rect.left}px`;
-    letter.style.top = `${rect.top}px`;
-    floor.append(letter);
-    const drift = (Math.random() - .5) * 200;
-    const targetX = Math.max(4, Math.min(window.innerWidth - rect.width - 4, rect.left + drift));
-    const pileHeight = (landedCount++ % 5) * 5;
-    const targetY = Math.max(0, window.innerHeight - rect.height - pileHeight - 4);
-    const rotation = (Math.random() - .5) * 75;
-    const animation = letter.animate([
-      { transform: 'translate(0, 0) rotate(0deg)' },
-      { transform: `translate(${targetX - rect.left}px, ${targetY - rect.top}px) rotate(${rotation}deg)` }
-    ], {duration: reducedMotion.matches ? 0 : 1100 + Math.random() * 600, delay: reducedMotion.matches ? 0 : i * 35, easing: 'cubic-bezier(.42,0,1,1)', fill: 'forwards'});
-    return animation.finished.then(() => {
-      // Anchor landed letters to the screen floor, even while the page scrolls.
-      letter.style.left = `${targetX / window.innerWidth * 100}%`;
-      letter.style.top = 'auto';
-      letter.style.bottom = `${pileHeight + 4}px`;
-      letter.style.transform = `rotate(${rotation}deg)`;
-      animation.cancel();
-    });
-  }));
-}
-for (const paragraph of document.querySelectorAll('#text p')) {
+for (const paragraph of document.querySelectorAll('#text p:not(.interaction-hint)')) {
   const tokens = paragraph.textContent.split(/([\p{L}]+(?:[’'\-][\p{L}]+)*)/u);
   paragraph.replaceChildren(...tokens.map(token => {
     const alternatives = alternativesFor(token);
     if (!alternatives) return document.createTextNode(token);
+
     const word = document.createElement('span');
     word.className = 'word';
     word.tabIndex = 0;
     word.setAttribute('role', 'button');
-    word.setAttribute('aria-label', token);
+    word.setAttribute('aria-label', `Hidden word: ${token}. Hover while moving for one second to reveal.`);
+
     const reserve = document.createElement('span');
     reserve.className = 'reserve';
     reserve.setAttribute('aria-hidden', 'true');
+    reserve.textContent = token;
+
     const visible = document.createElement('span');
     visible.className = 'visible';
     visible.textContent = token;
-    word.append(reserve, visible);
-    const history = [token.toLowerCase()];
-    let busy = false;
-    // Match the current word exactly: no empty slots for hypothetical replacements.
-    reserve.textContent = token;
 
-    async function transform() {
-      if (busy) return;
-      busy = true;
-      try {
-        const falling = dropLetters(visible);
-        visible.style.visibility = 'hidden';
-        await falling;
-        const next = nextAssociation(visible.textContent, history);
-        history.push(next.toLowerCase());
-        if (history.length > 6) history.shift();
-        const replacement = matchCase(next, token);
-        reserve.textContent = replacement;
-        visible.textContent = replacement;
-        word.setAttribute('aria-label', replacement);
-        visible.style.opacity = '0';
-        visible.style.visibility = '';
-        const returning = visible.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 2400, delay: 450, easing: 'ease-in-out', fill: 'forwards' });
-        await returning.finished;
-        visible.style.opacity = '';
-        returning.cancel();
-      } finally {
-        visible.style.visibility = '';
-        visible.style.opacity = '';
-        busy = false;
-      }
+    const cloud = document.createElement('span');
+    cloud.className = 'word-dots';
+    cloud.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < 7; i++) cloud.append(document.createElement('i'));
+    word.append(reserve, visible, cloud);
+
+    const history = [token.toLowerCase()];
+    let timer;
+    let busy = false;
+    let moving = false;
+    let lastPoint;
+
+    function hide() {
+      clearTimeout(timer);
+      timer = undefined;
+      moving = false;
+      lastPoint = undefined;
+      word.classList.remove('revealed');
     }
+
+    function revealNext() {
+      timer = undefined;
+      if (!moving || busy) return;
+      busy = true;
+      const next = nextAssociation(visible.textContent, history);
+      history.push(next.toLowerCase());
+      if (history.length > 6) history.shift();
+      const replacement = matchCase(next, token);
+      reserve.textContent = replacement;
+      visible.textContent = replacement;
+      word.setAttribute('aria-label', replacement);
+      word.classList.add('revealed');
+      window.setTimeout(() => { busy = false; }, 450);
+    }
+
+    function startTimer() {
+      if (!moving || timer || word.classList.contains('revealed')) return;
+      timer = window.setTimeout(revealNext, revealDelay);
+    }
+
     word.addEventListener('pointermove', event => {
-      // Layout changes can cause pointerenter without intentional interaction.
-      if (event.pointerType !== 'touch' && (event.movementX || event.movementY)) transform();
+      if (event.pointerType === 'touch') return;
+      const point = `${event.clientX},${event.clientY}`;
+      if (point === lastPoint) return;
+      lastPoint = point;
+      moving = true;
+      startTimer();
     });
-    word.addEventListener('click', transform);
+    word.addEventListener('pointerleave', hide);
+    word.addEventListener('focus', () => { moving = true; startTimer(); });
+    word.addEventListener('blur', hide);
     word.addEventListener('keydown', event => {
-      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); transform(); }
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        if (word.classList.contains('revealed')) hide();
+        else { moving = true; startTimer(); }
+      }
     });
     return word;
   }));
