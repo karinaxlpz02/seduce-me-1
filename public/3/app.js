@@ -9,23 +9,18 @@ networkLayer.classList.add('network-layer');
 networkLayer.setAttribute('aria-hidden', 'true');
 document.body.append(networkLayer);
 let activeWord;
+let connections = [];
 
 function markerCenter(word) {
   const rect = word.querySelector('.word-marker').getBoundingClientRect();
   return [rect.left + rect.width / 2, rect.top + rect.height / 2];
 }
 
-function drawConnections(word) {
+function drawConnections() {
   networkLayer.replaceChildren();
-  if (!word || word.classList.contains('revealed')) return;
-
-  const [sourceX, sourceY] = markerCenter(word);
-  const related = new Set(relatedWordsFor(word.dataset.word));
-  for (const term of related) {
-    const target = [...document.querySelectorAll('.word')].find(candidate =>
-      candidate !== word && candidate.dataset.word === term && !candidate.classList.contains('revealed')
-    );
-    if (!target) continue;
+  for (const [source, target] of connections) {
+    if (source === activeWord || target === activeWord || source.classList.contains('revealed') || target.classList.contains('revealed')) continue;
+    const [sourceX, sourceY] = markerCenter(source);
     const [targetX, targetY] = markerCenter(target);
     const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
     line.setAttribute('x1', String(sourceX));
@@ -36,9 +31,29 @@ function drawConnections(word) {
   }
 }
 
-window.addEventListener('scroll', () => drawConnections(activeWord), { passive: true });
-window.addEventListener('resize', () => drawConnections(activeWord));
+function buildConnections() {
+  const words = [...document.querySelectorAll('.word')];
+  const edges = new Set();
+  connections = [];
+  for (const word of words) {
+    const related = new Set(relatedWordsFor(word.dataset.word));
+    const target = words.find(candidate => candidate !== word && related.has(candidate.dataset.word));
+    const fallback = words[(words.indexOf(word) + 1) % words.length];
+    const other = target || fallback;
+    if (!other || other === word) continue;
+    const a = words.indexOf(word);
+    const b = words.indexOf(other);
+    const key = `${Math.min(a, b)}:${Math.max(a, b)}`;
+    if (edges.has(key)) continue;
+    edges.add(key);
+    connections.push([word, other]);
+  }
+}
 
+window.addEventListener('scroll', drawConnections, { passive: true });
+window.addEventListener('resize', drawConnections);
+
+let wordCount = 0;
 for (const paragraph of document.querySelectorAll('#text p')) {
   const tokens = paragraph.textContent.split(/([\p{L}]+(?:[’'\-][\p{L}]+)*)/u);
   const candidates = tokens.flatMap((token, index) => alternativesFor(token) ? [index] : []);
@@ -77,7 +92,19 @@ for (const paragraph of document.querySelectorAll('#text p')) {
     const marker = document.createElement('span');
     marker.className = 'word-marker';
     marker.setAttribute('aria-hidden', 'true');
-    for (let dot = 0; dot < 3; dot++) marker.append(document.createElement('i'));
+    const rhythms = [
+      { duration: 1.02, step: .16 },
+      { duration: 1.28, step: .2 },
+      { duration: 1.48, step: .24 },
+      { duration: 1.16, step: .13 }
+    ];
+    const rhythm = rhythms[wordCount++ % rhythms.length];
+    for (let dot = 0; dot < 3; dot++) {
+      const point = document.createElement('i');
+      point.style.animationDuration = `${rhythm.duration}s`;
+      point.style.animationDelay = `${dot * rhythm.step}s`;
+      marker.append(point);
+    }
 
     word.append(reserve, visible, marker);
 
@@ -91,7 +118,7 @@ for (const paragraph of document.querySelectorAll('#text p')) {
       timer = undefined;
       moving = false;
       lastPoint = undefined;
-      word.classList.remove('revealed');
+      word.classList.remove('revealed', 'hovering');
     }
 
     function revealNext() {
@@ -118,7 +145,7 @@ for (const paragraph of document.querySelectorAll('#text p')) {
       }));
       word.setAttribute('aria-label', replacement);
       word.classList.add('revealed');
-      drawConnections(word);
+      drawConnections();
     }
 
     function startTimer() {
@@ -133,10 +160,10 @@ for (const paragraph of document.querySelectorAll('#text p')) {
       moving = true;
       startTimer();
     });
-    word.addEventListener('pointerenter', () => { activeWord = word; drawConnections(word); });
-    word.addEventListener('pointerleave', () => { hide(); activeWord = undefined; networkLayer.replaceChildren(); });
-    word.addEventListener('focus', () => { activeWord = word; drawConnections(word); moving = true; startTimer(); });
-    word.addEventListener('blur', () => { hide(); activeWord = undefined; networkLayer.replaceChildren(); });
+    word.addEventListener('pointerenter', () => { activeWord = word; word.classList.add('hovering'); drawConnections(); moving = true; startTimer(); });
+    word.addEventListener('pointerleave', () => { hide(); activeWord = undefined; drawConnections(); });
+    word.addEventListener('focus', () => { activeWord = word; word.classList.add('hovering'); drawConnections(); moving = true; startTimer(); });
+    word.addEventListener('blur', () => { hide(); activeWord = undefined; drawConnections(); });
     word.addEventListener('keydown', event => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
@@ -147,3 +174,6 @@ for (const paragraph of document.querySelectorAll('#text p')) {
     return word;
   }));
 }
+
+buildConnections();
+drawConnections();

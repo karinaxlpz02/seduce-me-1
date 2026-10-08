@@ -11,14 +11,15 @@ p{margin:0 0 1.25em;font-size:clamp(23px,2.65vw,45px);line-height:1.5;letter-spa
 .word .visible{opacity:0;text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:.12em;transition:opacity .18s ease}
 .word-marker{position:relative;align-self:center;justify-self:center;width:.58em;height:.2em;pointer-events:none;z-index:2}
 .word-marker i{position:absolute;top:50%;width:.13em;height:.13em;border-radius:50%;background:#000;transform:translate(-50%,-50%) scale(.86);animation:typing-pulse 1.08s ease-in-out infinite}
-.word-marker i:nth-child(1){left:0;animation-delay:0s}
-.word-marker i:nth-child(2){left:50%;animation-delay:.18s}
-.word-marker i:nth-child(3){left:100%;animation-delay:.36s}
+.word-marker i:nth-child(1){left:0}
+.word-marker i:nth-child(2){left:50%}
+.word-marker i:nth-child(3){left:100%}
 @keyframes typing-pulse{0%,70%,100%{opacity:.55;transform:translate(-50%,-50%) scale(.86)}35%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}}
 .network-layer{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:visible}
 .network-layer line{stroke:#000;stroke-width:1;stroke-opacity:.34;vector-effect:non-scaling-stroke}
 .word.revealed .visible{opacity:1}
 .word.revealed .word-marker{opacity:0}
+.word.hovering .word-marker{opacity:0}
 .word.revealed .word-map{opacity:0;visibility:hidden}
 .sprinkle-letter{display:inline-block;white-space:pre}
 .word:focus-visible{outline:2px solid #000;outline-offset:3px}
