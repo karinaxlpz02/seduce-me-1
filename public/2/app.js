@@ -14,7 +14,7 @@ for (const paragraph of document.querySelectorAll('#text p:not(.interaction-hint
     word.className = 'word';
     word.tabIndex = 0;
     word.setAttribute('role', 'button');
-    word.setAttribute('aria-label', `Hidden word: ${token}. Hover while moving for one second to reveal.`);
+    word.setAttribute('aria-label', 'Hidden word. Move the pointer here for half a second to reveal its next association.');
 
     const reserve = document.createElement('span');
     reserve.className = 'reserve';
@@ -24,6 +24,7 @@ for (const paragraph of document.querySelectorAll('#text p:not(.interaction-hint
     const visible = document.createElement('span');
     visible.className = 'visible';
     visible.textContent = token;
+    visible.setAttribute('aria-hidden', 'true');
 
     const map = document.createElement('span');
     map.className = 'word-map';
