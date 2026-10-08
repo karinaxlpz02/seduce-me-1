@@ -2,7 +2,7 @@ import { alternativesFor, relatedWordsFor, nextAssociation, matchCase } from './
 
 await document.fonts.ready;
 
-const revealDelay = 1000;
+const revealDelay = 1500;
 const leaveDelay = 260;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const networkLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -78,7 +78,7 @@ for (const paragraph of document.querySelectorAll('#text p')) {
     word.dataset.word = token.toLowerCase();
     word.tabIndex = 0;
     word.setAttribute('role', 'button');
-    word.setAttribute('aria-label', 'Hidden word. Hover here for one second to reveal its next association.');
+    word.setAttribute('aria-label', 'Hidden word. Hover here for one and a half seconds to reveal its next association.');
 
     const reserve = document.createElement('span');
     reserve.className = 'reserve';
@@ -141,13 +141,15 @@ for (const paragraph of document.querySelectorAll('#text p')) {
       clearTimeout(restoreTimer);
       word.classList.remove('leaving');
       marker.querySelectorAll('.extra-dot').forEach(point => point.remove());
-      for (let dot = 0; dot < 6; dot++) {
+      for (let dot = 0; dot < 12; dot++) {
         const point = document.createElement('i');
         point.className = 'extra-dot';
         point.style.setProperty('--dot-index', dot);
-        point.style.setProperty('--dx', `${(dot - 2.5) * 8}px`);
-        point.style.setProperty('--dy', `${-8 - (dot % 3) * 7}px`);
-        point.style.animationDelay = `${dot * 55}ms`;
+        const angle = (Math.PI * 2 * dot) / 12;
+        const radius = 12 + (dot % 3) * 5;
+        point.style.setProperty('--dx', `${Math.cos(angle) * radius}px`);
+        point.style.setProperty('--dy', `${Math.sin(angle) * radius * .7}px`);
+        point.style.animationDelay = `${dot * 45}ms`;
         marker.append(point);
       }
       activeWord = word;
@@ -186,7 +188,7 @@ for (const paragraph of document.querySelectorAll('#text p')) {
         const animation = letter.animate([
           { opacity: 0, transform: `translate(${x}, ${y}) scale(.65)`, filter: 'blur(3px)' },
           { opacity: 1, transform: 'translate(0, 0) scale(1)', filter: 'blur(0)' }
-        ], { duration: reducedMotion.matches ? 0 : 820, delay: reducedMotion.matches ? 0 : letterIndex * 42, easing: 'cubic-bezier(.2,.75,.25,1)', fill: 'both' });
+        ], { duration: reducedMotion.matches ? 0 : 1400, delay: reducedMotion.matches ? 0 : letterIndex * 52, easing: 'cubic-bezier(.22,.72,.22,1)', fill: 'both' });
         sprinkleAnimations.push(animation);
         return letter;
       }));
