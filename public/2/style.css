@@ -10,19 +10,18 @@ p{margin:0 0 1.25em;font-size:clamp(23px,2.65vw,45px);line-height:1.5;letter-spa
 .word>*{grid-area:1/1}
 .word .reserve{visibility:hidden;pointer-events:none;user-select:none}
 .word .visible{opacity:0;text-decoration:underline;text-decoration-thickness:1.5px;text-underline-offset:.12em;transition:opacity .25s ease}
-.word-dots{position:relative;align-self:center;justify-self:center;width:1em;height:.75em;pointer-events:none}
-.word-dots i{position:absolute;left:50%;top:50%;width:.14em;height:.14em;border-radius:50%;background:#000;opacity:.85;transform:translate(-50%,-50%);animation:float-dot 1.8s ease-in-out infinite alternate}
-.word-dots i:nth-child(2){--x:-.34em;--y:-.22em;animation-delay:-.3s}
-.word-dots i:nth-child(3){--x:.35em;--y:-.2em;animation-delay:-.65s}
-.word-dots i:nth-child(4){--x:-.42em;--y:.15em;animation-delay:-1s}
-.word-dots i:nth-child(5){--x:.4em;--y:.18em;animation-delay:-.45s}
-.word-dots i:nth-child(6){--x:-.12em;--y:-.32em;animation-delay:-1.2s}
-.word-dots i:nth-child(7){--x:.08em;--y:.3em;animation-delay:-.8s}
-.word-dots i:first-child{--x:0em;--y:0em}
+.word::after{content:"";grid-area:1/1;align-self:center;justify-self:center;width:.17em;height:.17em;border-radius:50%;background:#000;z-index:2}
+.word-map{position:absolute;z-index:5;left:50%;bottom:50%;width:260px;height:100px;transform:translate(-50%,0);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .14s ease,visibility .14s}
+.word-map svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.word-map line{stroke:#000;stroke-width:.7;vector-effect:non-scaling-stroke;opacity:.75}
+.map-word{position:absolute;left:var(--node-x);top:var(--node-y);transform:translate(-50%,-50%);padding:1px 4px;background:#ff38ba;font:12px/1.2 Arial,sans-serif;letter-spacing:0;text-decoration:none}
+.map-hub{position:absolute;left:50%;bottom:0;width:.17em;height:.17em;border-radius:50%;background:#000;transform:translate(-50%,50%)}
+.word:hover .word-map,.word:focus .word-map{opacity:1;visibility:visible}
+.word:hover::after,.word:focus::after{opacity:0}
 .word.revealed .visible{opacity:1}
-.word.revealed .word-dots{opacity:0;transform:scale(2.6);transition:opacity .3s ease,transform .45s cubic-bezier(.2,.8,.2,1)}
-.word.revealed .word-dots i{animation:none}
-@keyframes float-dot{from{transform:translate(calc(-50% + var(--x,0em)),calc(-50% + var(--y,0em))) scale(.8)}to{transform:translate(calc(-50% + var(--x,0em)),calc(-50% + var(--y,0em))) scale(1.15)}}
+.word.revealed::after{opacity:0}
+.word.revealed .word-map{opacity:0;visibility:hidden}
+.sprinkle-letter{display:inline-block;white-space:pre}
 .word:focus-visible{outline:2px solid #000;outline-offset:3px}
 @media(max-width:600px){main{position:relative;z-index:1;padding:20px 18px 50px}p{font-size:24px;line-height:1.6}}
 @media(prefers-reduced-motion:reduce){.word .visible{will-change:opacity}}

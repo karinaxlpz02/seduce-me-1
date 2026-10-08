@@ -1616,6 +1616,31 @@ export function alternativesFor(word) {
   return matches.length ? [...new Set(matches.flat())] : null;
 }
 
+export function relatedWordsFor(word, count = 6) {
+  const origin = word.toLowerCase();
+  const found = new Set();
+  const visited = new Set([origin]);
+  const queue = [origin];
+  while (queue.length && found.size < count) {
+    const current = queue.shift();
+    for (const group of associations) {
+      if (!group.includes(current)) continue;
+      for (const related of group) {
+        if (related === origin || found.has(related)) continue;
+        found.add(related);
+        queue.push(related);
+        if (found.size === count) break;
+      }
+      if (found.size === count) break;
+    }
+    visited.add(current);
+    for (let i = queue.length - 1; i >= 0; i--) {
+      if (visited.has(queue[i])) queue.splice(i, 1);
+    }
+  }
+  return [...found];
+}
+
 export function nextAssociation(current, history = [], random = Math.random) {
   const choices = (alternativesFor(current) || []).filter(word => word !== current.toLowerCase());
   if (!choices.length) return current;
