@@ -2,7 +2,8 @@ import { alternativesFor, relatedWordsFor, nextAssociation, matchCase } from './
 
 await document.fonts.ready;
 
-const revealDelay = 500;
+const revealDelay = 650;
+const leaveDelay = 260;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const networkLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 networkLayer.classList.add('network-layer');
@@ -110,6 +111,8 @@ for (const paragraph of document.querySelectorAll('#text p')) {
 
     const history = [token.toLowerCase()];
     let timer;
+    let leaveTimer;
+    let restoreTimer;
     let moving = false;
     let lastPoint;
 
@@ -119,6 +122,42 @@ for (const paragraph of document.querySelectorAll('#text p')) {
       moving = false;
       lastPoint = undefined;
       word.classList.remove('revealed', 'hovering');
+      word.classList.add('leaving');
+      clearTimeout(restoreTimer);
+      restoreTimer = window.setTimeout(() => {
+        word.classList.remove('leaving');
+        marker.querySelectorAll('.extra-dot').forEach(point => point.remove());
+      }, 720);
+    }
+
+    function beginHover() {
+      clearTimeout(leaveTimer);
+      clearTimeout(restoreTimer);
+      word.classList.remove('leaving');
+      marker.querySelectorAll('.extra-dot').forEach(point => point.remove());
+      for (let dot = 0; dot < 6; dot++) {
+        const point = document.createElement('i');
+        point.className = 'extra-dot';
+        point.style.setProperty('--dot-index', dot);
+        point.style.setProperty('--dx', `${(dot - 2.5) * 8}px`);
+        point.style.setProperty('--dy', `${-8 - (dot % 3) * 7}px`);
+        point.style.animationDelay = `${dot * 55}ms`;
+        marker.append(point);
+      }
+      activeWord = word;
+      word.classList.add('hovering');
+      drawConnections();
+      moving = true;
+      startTimer();
+    }
+
+    function endHover() {
+      clearTimeout(leaveTimer);
+      leaveTimer = window.setTimeout(() => {
+        hide();
+        activeWord = undefined;
+        drawConnections();
+      }, leaveDelay);
     }
 
     function revealNext() {
@@ -140,7 +179,7 @@ for (const paragraph of document.querySelectorAll('#text p')) {
         letter.animate([
           { opacity: 0, transform: `translate(${x}, ${y}) scale(.65)`, filter: 'blur(3px)' },
           { opacity: 1, transform: 'translate(0, 0) scale(1)', filter: 'blur(0)' }
-        ], { duration: reducedMotion.matches ? 0 : 420, delay: reducedMotion.matches ? 0 : letterIndex * 26, easing: 'cubic-bezier(.2,.75,.25,1)', fill: 'both' });
+        ], { duration: reducedMotion.matches ? 0 : 820, delay: reducedMotion.matches ? 0 : letterIndex * 42, easing: 'cubic-bezier(.2,.75,.25,1)', fill: 'both' });
         return letter;
       }));
       word.setAttribute('aria-label', replacement);
@@ -160,10 +199,10 @@ for (const paragraph of document.querySelectorAll('#text p')) {
       moving = true;
       startTimer();
     });
-    word.addEventListener('pointerenter', () => { activeWord = word; word.classList.add('hovering'); drawConnections(); moving = true; startTimer(); });
-    word.addEventListener('pointerleave', () => { hide(); activeWord = undefined; drawConnections(); });
-    word.addEventListener('focus', () => { activeWord = word; word.classList.add('hovering'); drawConnections(); moving = true; startTimer(); });
-    word.addEventListener('blur', () => { hide(); activeWord = undefined; drawConnections(); });
+    word.addEventListener('pointerenter', beginHover);
+    word.addEventListener('pointerleave', endHover);
+    word.addEventListener('focus', beginHover);
+    word.addEventListener('blur', endHover);
     word.addEventListener('keydown', event => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
