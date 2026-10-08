@@ -60,19 +60,34 @@ function animateLine(line, target) {
 function buildConnections() {
   const words = [...document.querySelectorAll('.word')];
   const edges = new Set();
+  const degree = new Map(words.map(word => [word, 0]));
   connections = [];
+  const positions = new Map(words.map((word, index) => [word, index]));
+
+  function connect(a, b) {
+    const ai = positions.get(a);
+    const bi = positions.get(b);
+    const key = `${Math.min(ai, bi)}:${Math.max(ai, bi)}`;
+    if (edges.has(key)) return false;
+    edges.add(key);
+    connections.push([a, b]);
+    degree.set(a, degree.get(a) + 1);
+    degree.set(b, degree.get(b) + 1);
+    return true;
+  }
+
+  // Prefer related words, then fill each node's neighborhood with the closest words in reading order.
   for (const word of words) {
     const related = new Set(relatedWordsFor(word.dataset.word));
-    const target = words.find(candidate => candidate !== word && related.has(candidate.dataset.word));
-    const fallback = words[(words.indexOf(word) + 1) % words.length];
-    const other = target || fallback;
-    if (!other || other === word) continue;
-    const a = words.indexOf(word);
-    const b = words.indexOf(other);
-    const key = `${Math.min(a, b)}:${Math.max(a, b)}`;
-    if (edges.has(key)) continue;
-    edges.add(key);
-    connections.push([word, other]);
+    const candidates = words.filter(candidate => candidate !== word).sort((a, b) => {
+      const aRelated = related.has(a.dataset.word) ? 0 : 1;
+      const bRelated = related.has(b.dataset.word) ? 0 : 1;
+      return aRelated - bRelated || Math.abs(positions.get(a) - positions.get(word)) - Math.abs(positions.get(b) - positions.get(word));
+    });
+    for (const candidate of candidates) {
+      if (degree.get(word) >= 4) break;
+      connect(word, candidate);
+    }
   }
 }
 
@@ -170,10 +185,8 @@ for (const paragraph of document.querySelectorAll('#text p')) {
         const point = document.createElement('i');
         point.className = 'extra-dot';
         point.style.setProperty('--dot-index', dot);
-        const angle = (Math.PI * 2 * dot) / 24;
-        const radius = 14 + (dot % 4) * 7;
-        point.style.setProperty('--dx', `${Math.cos(angle) * radius}px`);
-        point.style.setProperty('--dy', `${Math.sin(angle) * radius * .7}px`);
+        point.style.setProperty('--dx', `${(Math.random() - .5) * 58}px`);
+        point.style.setProperty('--dy', `${(Math.random() - .5) * 42}px`);
         point.style.animationDelay = `${dot * 28}ms`;
         marker.append(point);
       }
