@@ -27,14 +27,9 @@ const notes = [
   "your erotic field carries memory, intention, ancestral echoes, and creative power"
 ].filter(note => note.trim().split(/\s+/).length >= 5);
 
-const maxRows = 10;
 const characterDelay = 60;
 let previousNote = -1;
 let rowCount = 0;
-
-function keepLatestRows() {
-  while (stream.childElementCount > maxRows) stream.firstElementChild.remove();
-}
 
 function addNoteRow(side) {
   const row = document.createElement("div");
@@ -47,7 +42,6 @@ function addNoteRow(side) {
   const rightOrnament = leftOrnament.cloneNode(true);
   row.append(leftOrnament, text, rightOrnament);
   stream.append(row);
-  keepLatestRows();
   return text;
 }
 
@@ -82,7 +76,7 @@ async function run() {
 }
 
 if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
-  notes.slice(0, maxRows).forEach((note, index) => {
+  notes.forEach((note, index) => {
     const text = addNoteRow(index % 2 === 0 ? "left" : "right");
     text.textContent = note;
   });

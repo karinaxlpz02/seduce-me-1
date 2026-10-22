@@ -16,39 +16,28 @@
 html, body { width: 100%; min-height: 100%; margin: 0; }
 
 body {
-  min-height: 100svh;
-  overflow: hidden;
+  min-height: 100vh;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: linear-gradient(180deg, #F4EFFD 0%, #EDF4EF 30%, #FBFCFC 50%, #EDF4EF 70%, #F4EFFD 100%);
 }
 
 main {
   position: relative;
   z-index: 1;
-  display: grid;
-  min-height: 100svh;
-  place-items: center;
-  padding: 2rem;
-  text-align: center;
+  min-height: 100vh;
+  padding: 2rem 1.5rem;
   pointer-events: none;
 }
 
 .composition {
-  position: relative;
-  width: min(78vw, 920px);
-  height: min(68vh, 570px);
-  min-height: 340px;
-  padding: 42px 38px;
+  width: 100%;
+  min-height: calc(100vh - 4rem);
 }
 
 #word-stream {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  right: auto;
-  width: min(82vw, 1120px);
-  height: min(68vh, 570px);
-  transform: translate(-50%, -50%);
-  overflow: hidden;
+  width: 100%;
+  min-height: calc(100vh - 4rem);
   font-size: clamp(1rem, 1.5vw, 1.5rem);
   line-height: 1.25;
   letter-spacing: -.035em;
@@ -67,7 +56,7 @@ main {
 }
 
 .note-row.left {
-  flex-direction: row-reverse;
+  margin-left: 0;
 }
 
 .note-row.right {
@@ -80,7 +69,7 @@ main {
   overflow-wrap: anywhere;
 }
 
-.note-row.left .note-text { text-align: right; }
+.note-row.left .note-text,
 .note-row.right .note-text { text-align: left; }
 
 .ornament {
@@ -103,8 +92,9 @@ main {
 .filters { position: absolute; width: 0; height: 0; overflow: hidden; }
 
 @media (max-width: 600px) {
-  .composition { width: 94vw; height: min(76vh, 720px); min-height: 420px; padding: 38px 24px; }
-  #word-stream { width: calc(100vw - 2rem); font-size: clamp(.85rem, 3.6vw, 1.1rem); }
+  main { padding: 1.25rem .75rem; }
+  .composition, #word-stream { min-height: calc(100vh - 2.5rem); }
+  #word-stream { width: 100%; font-size: clamp(.85rem, 3.6vw, 1.1rem); }
   .note-row { width: 49%; gap: .2em; }
   .note-row.right { margin-left: 51%; }
 }
