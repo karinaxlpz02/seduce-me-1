@@ -55,20 +55,60 @@ function resize() {
   makeTexture();
 }
 
-function stitch(x, y, scale, rotation, alpha) {
+function textStar(x, y, time, label, index) {
+  const radius = Math.min(46, Math.max(20, width * .045), height * .055);
+  const phase = time * .00065 + index * 1.7;
+  const pulse = reduceMotion.matches ? 0 : Math.sin(phase);
+  const sway = reduceMotion.matches ? 0 : Math.sin(phase * .7) * .04;
+  const rotation = reduceMotion.matches ? 0 : Math.sin(phase * .55) * .055;
+
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(rotation);
-  ctx.scale(scale, scale);
-  ctx.strokeStyle = `rgb(38 49 57 / ${alpha})`;
-  ctx.lineWidth = 1.25;
+  ctx.scale(1 + pulse * .025, 1 - pulse * .02);
+
+  // Four embroidered rays frame a small window for the moving letters.
+  ctx.strokeStyle = "rgb(38 49 57 / 58%)";
+  ctx.lineWidth = 1.3;
   ctx.lineCap = "round";
   ctx.beginPath();
-  ctx.moveTo(-3, -3); ctx.lineTo(3, 3);
-  ctx.moveTo(3, -3); ctx.lineTo(-3, 3);
-  ctx.moveTo(0, -4.4); ctx.lineTo(0, 4.4);
-  ctx.moveTo(-4.4, 0); ctx.lineTo(4.4, 0);
+  ctx.moveTo(0, -radius); ctx.quadraticCurveTo(3, -5, radius, 0);
+  ctx.quadraticCurveTo(4, 3, 0, radius);
+  ctx.quadraticCurveTo(-3, 5, -radius, 0);
+  ctx.quadraticCurveTo(-4, -3, 0, -radius);
   ctx.stroke();
+
+  ctx.beginPath();
+  const windowRadius = radius * .66;
+  ctx.arc(0, 0, windowRadius + 1.5, 0, Math.PI * 2);
+  ctx.fillStyle = "rgb(233 239 242 / 94%)";
+  ctx.fill();
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(0, 0, windowRadius, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "rgb(38 49 57 / 82%)";
+  const fontSize = radius * .36;
+  ctx.font = `${fontSize}px "Serifbabe SIGMA Test", Georgia, serif`;
+  const rows = label.split("|");
+  rows.forEach((row, rowIndex) => {
+    const yOffset = (rowIndex - (rows.length - 1) / 2) * fontSize * .92;
+    const xOffset = reduceMotion.matches ? 0 : Math.sin(phase + rowIndex) * radius * .12;
+    ctx.save();
+    ctx.translate(xOffset, yOffset + pulse * radius * .055);
+    ctx.rotate(sway);
+    ctx.fillText(row, 0, 0);
+    ctx.restore();
+  });
+  ctx.restore();
+
+  // Tiny center stitch echoes the moving point in the reference.
+  ctx.fillStyle = `rgb(38 49 57 / ${.32 + Math.abs(pulse) * .2})`;
+  ctx.beginPath();
+  ctx.arc(Math.sin(phase) * 1.5, Math.cos(phase * .8) * 1.5, 1.1, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 }
 
@@ -84,17 +124,13 @@ function draw(time = 0) {
 
   const cx = width / 2;
   const cy = height / 2;
-  const pulse = reduceMotion.matches ? 0 : Math.sin(time * .0013);
-  const turn = reduceMotion.matches ? 0 : Math.sin(time * .00042) * .035;
-  const offset = 17 + pulse * 1.2;
-  stitch(cx - offset, cy - offset, 1 + pulse * .045, turn, .7);
-  stitch(cx + offset, cy - offset, 1 - pulse * .04, -turn, .62);
-  stitch(cx - offset, cy + offset, 1 - pulse * .035, -turn, .62);
-  stitch(cx + offset, cy + offset, 1 + pulse * .04, turn, .7);
-  ctx.fillStyle = "rgb(38 49 57 / 42%)";
-  ctx.beginPath();
-  ctx.arc(cx + Math.sin(time * .00065) * 1.6, cy + Math.cos(time * .0008) * 1.2, 1.2, 0, Math.PI * 2);
-  ctx.fill();
+  const radius = Math.min(46, Math.max(20, width * .045), height * .055);
+  const offset = radius * 1.42;
+  const labels = ["I|want", "to|feel", "some|thing", "real"];
+  textStar(cx - offset, cy - offset, time, labels[0], 0);
+  textStar(cx + offset, cy - offset, time, labels[1], 1);
+  textStar(cx - offset, cy + offset, time, labels[2], 2);
+  textStar(cx + offset, cy + offset, time, labels[3], 3);
 
   if (!reduceMotion.matches) frame = requestAnimationFrame(draw);
 }
