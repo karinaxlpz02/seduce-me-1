@@ -45,21 +45,21 @@ main {
   top: 50%;
   left: 50%;
   right: auto;
-  width: 100vw;
+  width: calc(100vw - 4rem);
   height: 12em;
   transform: translate(-50%, -50%);
   overflow: hidden;
-  font-size: clamp(2rem, 4vw, 3.6rem);
+  font-size: clamp(1.5rem, 3vw, 2.6rem);
   line-height: 1.2;
   letter-spacing: -.035em;
 }
 
 .note-line {
   position: relative;
-  left: 50%;
-  width: max-content;
-  min-width: 100vw;
-  transform: translateX(-50%);
+  left: 0;
+  width: 50%;
+  min-width: 50%;
+  margin-left: 0;
   display: block;
   height: 1.2em;
   line-height: 1.2;
@@ -67,7 +67,12 @@ main {
   white-space: nowrap;
   filter: url(#word-inner-shadow);
   transform-origin: center center;
-  text-align: center;
+  text-align: left;
+}
+
+.note-line:nth-child(even) {
+  margin-left: 50%;
+  text-align: right;
 }
 
 .letter {
@@ -78,9 +83,14 @@ main {
 }
 
 .passage-break {
+  width: 100%;
+  margin-left: 0;
   display: grid;
   place-items: center;
 }
+
+.note-line.passage-break { text-align: center; }
+.note-line.passage-break:nth-child(even) { margin-left: 0; }
 
 @keyframes letter-scale {
   from { opacity: 0; transform: scale(0); }
@@ -91,5 +101,5 @@ main {
 
 @media (max-width: 600px) {
   .composition { width: 94vw; height: min(76vh, 720px); min-height: 420px; padding: 38px 24px; }
-  #word-stream { font-size: clamp(1.5rem, 7vw, 2.4rem); }
+  #word-stream { font-size: clamp(1.25rem, 5vw, 2rem); }
 }
