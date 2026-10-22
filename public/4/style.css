@@ -8,7 +8,7 @@
   color-scheme: light;
   font-family: "Serifbabe SIGMA Test", Georgia, serif;
   color: #20252a;
-  background: #e9eff2;
+  background: linear-gradient(180deg, #F4EFFD 0%, #EDF4EF 30%, #FBFCFC 50%, #EDF4EF 70%, #F4EFFD 100%);
 }
 
 * { box-sizing: border-box; }
@@ -18,15 +18,7 @@ html, body { width: 100%; min-height: 100%; margin: 0; }
 body {
   min-height: 100svh;
   overflow: hidden;
-  background: #e9eff2;
-}
-
-#canvas {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  display: block;
+  background: linear-gradient(180deg, #F4EFFD 0%, #EDF4EF 30%, #FBFCFC 50%, #EDF4EF 70%, #F4EFFD 100%);
 }
 
 main {
@@ -57,7 +49,6 @@ main {
   font-size: clamp(2.2rem, 5vw, 5rem);
   line-height: 1;
   letter-spacing: -.035em;
-  text-shadow: 0 1px 12px rgb(233 239 242 / 70%);
 }
 
 .word-row {
@@ -69,11 +60,6 @@ main {
   white-space: nowrap;
   transform-origin: center center;
   will-change: transform, opacity;
-}
-
-.space {
-  display: inline-block;
-  width: .26em;
 }
 
 .star {
@@ -105,6 +91,5 @@ main {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  body { background: #e9eff2; }
   .star { animation: none; }
 }
