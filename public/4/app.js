@@ -28,7 +28,7 @@ const notes = [
 ].filter(note => note.trim().split(/\s+/).length >= 5);
 
 const maxRows = 10;
-const characterDelay = 24;
+const characterDelay = 80;
 let previousNote = -1;
 
 function wordsPerLine(note) {

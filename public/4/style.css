@@ -65,7 +65,7 @@ main {
 .letter {
   display: inline-block;
   transform-origin: center center;
-  animation: letter-scale 560ms cubic-bezier(.4, 0, .2, 1) both;
+  animation: letter-scale 760ms cubic-bezier(.4, 0, .2, 1) both;
   will-change: transform, opacity;
 }
 
