@@ -29,7 +29,8 @@ const notes = [
 ];
 const words = notes.join(" ").toLowerCase().match(/[\p{L}\p{N}’'-]+/gu);
 const rows = [];
-const motionDuration = 820;
+const motionDuration = 1450;
+const motionEasing = "cubic-bezier(.4, 0, .2, 1)";
 
 function addWord() {
   const word = words[Math.floor(Math.random() * words.length)];
@@ -44,7 +45,7 @@ function addWord() {
     exiting.animate([
       { transform: "translateY(0) scale(1)", opacity: 1 },
       { transform: "translateY(-100%) scale(0)", opacity: 0 }
-    ], { duration: motionDuration, easing: "cubic-bezier(.22,.72,.22,1)", fill: "forwards" });
+    ], { duration: motionDuration, easing: motionEasing, fill: "forwards" });
     setTimeout(() => exiting.remove(), motionDuration);
   }
 
@@ -55,7 +56,7 @@ function addWord() {
     existing.animate([
       { transform: `translateY(${oldSlot * 100}%) scale(1)`, opacity: 1 },
       { transform: `translateY(${newSlot * 100}%) scale(1)`, opacity: 1 }
-    ], { duration: motionDuration, easing: "cubic-bezier(.22,.72,.22,1)", fill: "forwards" });
+    ], { duration: motionDuration, easing: motionEasing, fill: "forwards" });
   });
 
   stream.append(row);
@@ -63,7 +64,7 @@ function addWord() {
   row.animate([
     { transform: `translateY(${(index + 1) * 100}%) scale(0)`, opacity: 0 },
     { transform: `translateY(${index * 100}%) scale(1)`, opacity: 1 }
-  ], { duration: motionDuration, easing: "cubic-bezier(.22,.72,.22,1)", fill: "forwards" });
+  ], { duration: motionDuration, easing: motionEasing, fill: "forwards" });
   rows.push(row);
 }
 
@@ -77,5 +78,5 @@ if (reduceMotion.matches) {
   }
 } else {
   addWord();
-  const ticker = setInterval(addWord, 1000);
+  const ticker = setInterval(addWord, 1700);
 }
