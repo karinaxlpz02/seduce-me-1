@@ -1,6 +1,21 @@
 const canvas = document.querySelector("#canvas");
 const ctx = canvas.getContext("2d", { alpha: false });
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const phrase = document.querySelector("#phrase");
+
+const phraseText = phrase.textContent;
+phrase.replaceChildren(...[...phraseText].map((character, index) => {
+  const span = document.createElement("span");
+  span.setAttribute("aria-hidden", "true");
+  if (character === " ") {
+    span.className = "space";
+  } else {
+    span.className = "letter";
+    span.textContent = character;
+    span.style.setProperty("--delay", `${index * .11}s`);
+  }
+  return span;
+}));
 
 let width = 0;
 let height = 0;
@@ -55,73 +70,6 @@ function resize() {
   makeTexture();
 }
 
-function textStar(x, y, time, label, index) {
-  const radius = Math.min(90, Math.max(30, width * .1), height * .1);
-  const phase = time * .0012 + index * 1.7;
-  const pulse = reduceMotion.matches ? 0 : Math.sin(phase);
-  const sway = reduceMotion.matches ? 0 : Math.sin(phase * .7) * .04;
-  const rotation = reduceMotion.matches ? 0 : Math.sin(phase * .55) * .055;
-
-  ctx.save();
-  ctx.translate(x, y);
-  ctx.rotate(rotation);
-  ctx.scale(1 + pulse * .025, 1 - pulse * .02);
-
-  // Four embroidered rays frame a small window for the moving letters.
-  ctx.strokeStyle = "rgb(38 49 57 / 58%)";
-  ctx.lineWidth = 1.5;
-  ctx.lineCap = "round";
-  ctx.beginPath();
-  ctx.moveTo(0, -radius); ctx.quadraticCurveTo(3, -5, radius, 0);
-  ctx.quadraticCurveTo(4, 3, 0, radius);
-  ctx.quadraticCurveTo(-3, 5, -radius, 0);
-  ctx.quadraticCurveTo(-4, -3, 0, -radius);
-  ctx.stroke();
-
-  ctx.beginPath();
-  const windowRadius = radius * .66;
-  ctx.arc(0, 0, windowRadius + 1.5, 0, Math.PI * 2);
-  ctx.fillStyle = "rgb(233 239 242 / 94%)";
-  ctx.fill();
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(0, 0, windowRadius, 0, Math.PI * 2);
-  ctx.clip();
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = "rgb(38 49 57 / 82%)";
-  const fontSize = radius * .36;
-  ctx.font = `${fontSize}px "Serifbabe SIGMA Test", Georgia, serif`;
-  const rows = label.split("|");
-  rows.forEach((row, rowIndex) => {
-    const rowY = reduceMotion.matches ? 0 : Math.sin(phase * 1.5 + rowIndex) * fontSize * .16;
-    const rowX = reduceMotion.matches ? 0 : Math.sin(phase + rowIndex) * radius * .08;
-    const yOffset = (rowIndex - (rows.length - 1) / 2) * fontSize * 1.1;
-    const letters = [...row];
-    const widths = letters.map((letter) => ctx.measureText(letter).width);
-    let cursor = -widths.reduce((sum, letterWidth) => sum + letterWidth, 0) / 2;
-    letters.forEach((letter, letterIndex) => {
-      const letterWidth = widths[letterIndex];
-      const wiggle = reduceMotion.matches ? 0 : Math.sin(phase * 1.7 + letterIndex * .9 + rowIndex) * fontSize * .1;
-      const slide = reduceMotion.matches ? 0 : Math.sin(phase + letterIndex * .65) * fontSize * .015;
-      ctx.save();
-      ctx.translate(cursor + letterWidth / 2 + rowX + slide, yOffset + rowY + wiggle);
-      ctx.rotate(reduceMotion.matches ? 0 : sway + Math.sin(phase + letterIndex) * .02);
-      ctx.fillText(letter, 0, 0);
-      ctx.restore();
-      cursor += letterWidth;
-    });
-  });
-  ctx.restore();
-
-  // Tiny center stitch echoes the moving point in the reference.
-  ctx.fillStyle = `rgb(38 49 57 / ${.32 + Math.abs(pulse) * .2})`;
-  ctx.beginPath();
-  ctx.arc(Math.sin(phase) * 1.5, Math.cos(phase * .8) * 1.5, 1.1, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-}
-
 function draw(time = 0) {
   ctx.clearRect(0, 0, width, height);
   const drift = reduceMotion.matches ? 0 : time * .008;
@@ -131,16 +79,6 @@ function draw(time = 0) {
   ctx.fillStyle = pattern;
   ctx.fillRect(-20, -20, width + 40, height + 40);
   ctx.restore();
-
-  const cx = width / 2;
-  const cy = height / 2;
-  const radius = Math.min(90, Math.max(30, width * .1), height * .1);
-  const offset = radius * 1.12;
-  const labels = ["I|want", "to|feel", "some|thing", "real"];
-  textStar(cx - offset, cy - offset, time, labels[0], 0);
-  textStar(cx + offset, cy - offset, time, labels[1], 1);
-  textStar(cx - offset, cy + offset, time, labels[2], 2);
-  textStar(cx + offset, cy + offset, time, labels[3], 3);
 
   if (!reduceMotion.matches) frame = requestAnimationFrame(draw);
 }

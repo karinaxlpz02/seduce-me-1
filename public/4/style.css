@@ -32,25 +32,85 @@ body {
 main {
   position: relative;
   z-index: 1;
-  display: flex;
+  display: grid;
   min-height: 100svh;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 9vh 2rem 2rem;
+  place-items: center;
+  padding: 2rem;
   text-align: center;
   pointer-events: none;
 }
 
+.composition {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 220px;
+  padding: 66px 46px;
+}
+
 p {
-  max-width: 30ch;
+  width: max-content;
+  max-width: calc(100vw - 7rem);
   margin: 0;
-  font-size: clamp(1.5rem, 2.7vw, 2.5rem);
-  line-height: 1.2;
-  letter-spacing: -.025em;
+  font-size: clamp(2rem, 4.5vw, 4rem);
+  line-height: 1.15;
+  letter-spacing: -.035em;
   text-wrap: balance;
   text-shadow: 0 1px 12px rgb(233 239 242 / 70%);
 }
 
+.letter {
+  display: inline-block;
+  transform-origin: center bottom;
+  animation: rise-through 4.3s cubic-bezier(.22,.72,.22,1) infinite;
+  animation-delay: var(--delay, 0s);
+  animation-fill-mode: backwards;
+  will-change: transform, opacity;
+}
+
+.space {
+  display: inline-block;
+  width: .26em;
+}
+
+.star {
+  position: absolute;
+  color: rgb(38 49 57 / 75%);
+  font-family: Georgia, serif;
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  line-height: 1;
+  animation: star-twitch 2.8s ease-in-out infinite;
+}
+
+.star-nw { top: 28px; left: 32px; }
+.star-ne { top: 28px; right: 32px; animation-delay: -.7s; }
+.star-sw { bottom: 28px; left: 32px; animation-delay: -1.4s; }
+.star-se { right: 32px; bottom: 28px; animation-delay: -2.1s; }
+
+@keyframes rise-through {
+  0%, 100% { opacity: 0; transform: translateY(17px) scale(0); }
+  15% { opacity: 1; transform: translateY(0) scale(1); }
+  27% { opacity: 1; transform: translateY(-2px) scale(1); }
+  42% { opacity: 0; transform: translateY(-22px) scale(0); }
+}
+
+@keyframes star-twitch {
+  0%, 100% { transform: scale(.92) rotate(-4deg); opacity: .62; }
+  50% { transform: scale(1.08) rotate(4deg); opacity: .9; }
+}
+
+@media (max-width: 600px) {
+  .composition { min-height: 190px; padding: 56px 34px; }
+  .star-nw { top: 20px; left: 13px; }
+  .star-ne { top: 20px; right: 13px; }
+  .star-sw { bottom: 20px; left: 13px; }
+  .star-se { right: 13px; bottom: 20px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   body { background: #e9eff2; }
+  .letter, .star { animation: none; }
+  .letter { opacity: 1; transform: none; }
 }
