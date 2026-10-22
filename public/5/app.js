@@ -1,4 +1,7 @@
 const stream = document.querySelector("#word-stream");
+const scatter = document.querySelector("#scatter");
+const scatterContext = scatter.getContext("2d");
+const letterFlecks = new WeakMap();
 
 // Text blocks from the linked Are.na channel.
 const notes = [
@@ -29,7 +32,68 @@ const notes = [
 
 const maxRows = 10;
 const characterDelay = 60;
+const maximumScatter = 24;
 let previousNote = -1;
+let pixelRatio = 1;
+
+function makeFlecks(letter) {
+  let seed = Math.floor(Number(letter.dataset.born) * 1000) + letter.dataset.letter.codePointAt(0);
+  const random = () => {
+    seed = (seed * 16807) % 2147483647;
+    return (seed - 1) / 2147483646;
+  };
+  return Array.from({ length: 28 }, () => ({
+    x: random(),
+    y: random(),
+    scatterX: random() * 2 - 1,
+    scatterY: random() * 2 - 1,
+    size: .35 + random() * 1.35,
+    length: .5 + random() * 4,
+    angle: random() * Math.PI * 2,
+    reveal: random()
+  }));
+}
+
+function resizeScatter() {
+  pixelRatio = Math.min(devicePixelRatio || 1, 2);
+  scatter.width = Math.round(innerWidth * pixelRatio);
+  scatter.height = Math.round(innerHeight * pixelRatio);
+  scatter.style.width = `${innerWidth}px`;
+  scatter.style.height = `${innerHeight}px`;
+  scatterContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+}
+
+function updateTexture() {
+  const now = performance.now();
+  scatterContext.clearRect(0, 0, innerWidth, innerHeight);
+
+  for (const letter of stream.querySelectorAll(".letter[data-born]")) {
+    const age = Math.min((now - Number(letter.dataset.born)) / 9000, 1);
+    letter.style.setProperty("--texture-level", age.toFixed(2));
+    if (age < .08) continue;
+
+    const rect = letter.getBoundingClientRect();
+    const flecks = letterFlecks.get(letter) || [];
+    const spread = maximumScatter * age;
+    scatterContext.fillStyle = `rgba(12, 12, 14, ${Math.min(.82, age * .88)})`;
+    scatterContext.strokeStyle = `rgba(12, 12, 14, ${Math.min(.72, age * .76)})`;
+
+    for (const fleck of flecks) {
+      if (age < fleck.reveal) continue;
+      const x = rect.left + fleck.x * rect.width + fleck.scatterX * spread;
+      const y = rect.top + fleck.y * rect.height + fleck.scatterY * spread;
+      if (fleck.length < 1.3) {
+        scatterContext.fillRect(x, y, fleck.size, fleck.size);
+      } else {
+        scatterContext.lineWidth = fleck.size;
+        scatterContext.beginPath();
+        scatterContext.moveTo(x, y);
+        scatterContext.lineTo(x + Math.cos(fleck.angle) * fleck.length, y + Math.sin(fleck.angle) * fleck.length);
+        scatterContext.stroke();
+      }
+    }
+  }
+}
 
 function wordsPerLine(note) {
   const words = note.trim().split(/\s+/);
@@ -74,6 +138,7 @@ function appendLetters(line, text) {
     letter.dataset.born = performance.now();
     letter.style.setProperty("--grain-x", `${Math.random() * 128}px`);
     letter.style.setProperty("--grain-y", `${Math.random() * 128}px`);
+    letterFlecks.set(letter, makeFlecks(letter));
     line.append(letter);
   }
 }
@@ -125,10 +190,7 @@ if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
   run();
 }
 
-setInterval(() => {
-  const now = performance.now();
-  for (const letter of stream.querySelectorAll(".letter[data-born]")) {
-    const age = now - Number(letter.dataset.born);
-    letter.style.setProperty("--texture-level", Math.min(age / 9000, 1).toFixed(2));
-  }
-}, 120);
+resizeScatter();
+updateTexture();
+addEventListener("resize", resizeScatter);
+setInterval(updateTexture, 50);
