@@ -30,67 +30,46 @@ const notes = [
 const maxRows = 10;
 const characterDelay = 60;
 let previousNote = -1;
-
-function wordsPerLine(note) {
-  const words = note.trim().split(/\s+/);
-  const lineCount = Math.max(1, Math.floor(words.length / 5));
-  const baseSize = Math.floor(words.length / lineCount);
-  const extraWords = words.length % lineCount;
-  const lines = [];
-  let offset = 0;
-
-  for (let line = 0; line < lineCount; line++) {
-    const length = baseSize + (line < extraWords ? 1 : 0);
-    lines.push(words.slice(offset, offset + length).join(" "));
-    offset += length;
-  }
-  return lines;
-}
+let rowCount = 0;
 
 function keepLatestRows() {
-  stream.scrollTop = stream.scrollHeight;
   while (stream.childElementCount > maxRows) stream.firstElementChild.remove();
-  stream.scrollTop = stream.scrollHeight;
 }
 
-function addLine(text) {
-  const line = document.createElement("div");
-  line.className = "note-line";
-  stream.append(line);
+function addNoteRow(side) {
+  const row = document.createElement("div");
+  row.className = `note-row ${side}`;
+  const leftOrnament = document.createElement("span");
+  leftOrnament.className = "ornament";
+  leftOrnament.textContent = "⚜";
+  const text = document.createElement("span");
+  text.className = "note-text";
+  const rightOrnament = leftOrnament.cloneNode(true);
+  row.append(leftOrnament, text, rightOrnament);
+  stream.append(row);
   keepLatestRows();
-  return line;
+  return text;
 }
 
 function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function writeLine(text) {
-  const line = addLine(text);
-  for (const character of text) {
+async function writeNote(note) {
+  const side = rowCount++ % 2 === 0 ? "left" : "right";
+  const text = addNoteRow(side);
+  for (const character of note) {
     if (character === " ") {
-      line.append(document.createTextNode(" "));
+      text.append(document.createTextNode(" "));
     } else {
       const letter = document.createElement("span");
       letter.className = "letter";
       letter.textContent = character;
-      line.append(letter);
+      text.append(letter);
     }
-    keepLatestRows();
     await wait(characterDelay);
   }
-  await wait(180);
-}
-
-async function writeNote(note) {
-  const lines = wordsPerLine(note);
-  for (const line of lines) await writeLine(line);
-
-  const ornament = addLine("⚜");
-  ornament.classList.add("passage-break");
-  ornament.append(document.createTextNode("⚜"));
-  keepLatestRows();
-  await wait(1100);
+  await wait(900);
 }
 
 async function run() {
@@ -103,14 +82,10 @@ async function run() {
 }
 
 if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
-  const staticText = notes.slice(0, maxRows - 1);
-  for (const note of staticText) {
-    const line = addLine(note);
-    line.textContent = note;
-  }
-  const ornament = addLine("⚜");
-  ornament.classList.add("passage-break");
-  ornament.textContent = "⚜";
+  notes.slice(0, maxRows).forEach((note, index) => {
+    const text = addNoteRow(index % 2 === 0 ? "left" : "right");
+    text.textContent = note;
+  });
 } else {
   run();
 }

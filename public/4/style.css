@@ -46,33 +46,43 @@ main {
   left: 50%;
   right: auto;
   width: calc(100vw - 4rem);
-  height: 12em;
+  height: min(68vh, 570px);
   transform: translate(-50%, -50%);
   overflow: hidden;
-  font-size: clamp(1.5rem, 3vw, 2.6rem);
-  line-height: 1.2;
+  font-size: clamp(1rem, 1.5vw, 1.5rem);
+  line-height: 1.25;
   letter-spacing: -.035em;
 }
 
-.note-line {
+.note-row {
   position: relative;
-  left: 0;
-  width: 50%;
-  min-width: 50%;
-  margin-left: 0;
-  display: block;
-  height: 1.2em;
-  line-height: 1.2;
+  display: flex;
+  align-items: flex-start;
+  gap: .35em;
+  width: 49%;
+  min-height: 1.25em;
+  margin: 0 0 .25em 0;
   color: #FFFFFF;
-  white-space: nowrap;
   filter: url(#word-inner-shadow);
-  transform-origin: center center;
-  text-align: left;
 }
 
-.note-line:nth-child(even) {
-  margin-left: 50%;
-  text-align: right;
+.note-row.right {
+  margin-left: 51%;
+  flex-direction: row-reverse;
+}
+
+.note-text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.note-row.left .note-text { text-align: left; }
+.note-row.right .note-text { text-align: right; }
+
+.ornament {
+  flex: 0 0 auto;
+  line-height: 1.25;
 }
 
 .letter {
@@ -81,16 +91,6 @@ main {
   animation: letter-scale 650ms cubic-bezier(.4, 0, .2, 1) both;
   will-change: transform, opacity;
 }
-
-.passage-break {
-  width: 100%;
-  margin-left: 0;
-  display: grid;
-  place-items: center;
-}
-
-.note-line.passage-break { text-align: center; }
-.note-line.passage-break:nth-child(even) { margin-left: 0; }
 
 @keyframes letter-scale {
   from { opacity: 0; transform: scale(0); }
@@ -101,5 +101,7 @@ main {
 
 @media (max-width: 600px) {
   .composition { width: 94vw; height: min(76vh, 720px); min-height: 420px; padding: 38px 24px; }
-  #word-stream { font-size: clamp(1.25rem, 5vw, 2rem); }
+  #word-stream { width: calc(100vw - 2rem); font-size: clamp(.85rem, 3.6vw, 1.1rem); }
+  .note-row { width: 49%; gap: .2em; }
+  .note-row.right { margin-left: 51%; }
 }
