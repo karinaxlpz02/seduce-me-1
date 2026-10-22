@@ -46,11 +46,12 @@ main {
 
 .note-row {
   position: relative;
-  display: inline-flex;
-  align-items: flex-start;
-  gap: .35em;
-  width: fit-content;
-  max-width: 49%;
+  display: grid;
+  grid-template-columns: 1.25em minmax(0, 1fr) 1.25em;
+  column-gap: .25em;
+  align-items: start;
+  width: 56%;
+  max-width: 56%;
   min-height: 1.25em;
   margin: 0 0 .25em 0;
   color: #FFFFFF;
@@ -62,14 +63,18 @@ main {
 }
 
 .note-row.right {
-  margin-left: 51%;
+  margin-left: 44%;
 }
 
 .note-text {
-  flex: 0 1 auto;
   min-width: 0;
   overflow-wrap: normal;
   word-break: normal;
+}
+
+.note-word {
+  display: inline-block;
+  white-space: nowrap;
 }
 
 .note-row.left .note-text,
@@ -99,6 +104,6 @@ main {
   .composition, #word-stream { min-height: calc(100vh - 2.5rem); }
   .composition { width: 92vw; }
   #word-stream { width: 100%; font-size: clamp(1rem, 5vw, 1.4rem); }
-  .note-row { width: 49%; gap: .2em; }
-  .note-row.right { margin-left: 51%; }
+  .note-row { width: 54%; max-width: 54%; }
+  .note-row.right { margin-left: 46%; }
 }

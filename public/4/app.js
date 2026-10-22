@@ -52,16 +52,22 @@ function wait(ms) {
 async function writeNote(note) {
   const side = rowCount++ % 2 === 0 ? "left" : "right";
   const text = addNoteRow(side);
-  for (const character of note) {
-    if (character === " ") {
-      text.append(document.createTextNode(" "));
-    } else {
+  for (const part of note.split(/(\s+)/)) {
+    if (/^\s+$/.test(part)) {
+      text.append(document.createTextNode(part));
+      continue;
+    }
+
+    const word = document.createElement("span");
+    word.className = "note-word";
+    text.append(word);
+    for (const character of part) {
       const letter = document.createElement("span");
       letter.className = "letter";
       letter.textContent = character;
-      text.append(letter);
+      word.append(letter);
+      await wait(characterDelay);
     }
-    await wait(characterDelay);
   }
   await wait(900);
 }
