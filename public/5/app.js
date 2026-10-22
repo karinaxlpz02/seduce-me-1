@@ -1,6 +1,7 @@
 const stream = document.querySelector("#word-stream");
 const textureFilters = document.querySelector("#texture-filters");
 const displacementMaps = new WeakMap();
+const noiseThresholds = new WeakMap();
 const svgNamespace = "http://www.w3.org/2000/svg";
 
 // Text blocks from the linked Are.na channel.
@@ -41,6 +42,7 @@ function updateTexture() {
     const age = Math.min((now - Number(line.dataset.born)) / 7000, 1);
     const map = displacementMaps.get(line);
     map.setAttribute("scale", (maximumDisplacement * age).toFixed(2));
+    noiseThresholds.get(line).setAttribute("intercept", (-.1 - age * 10.1).toFixed(2));
   }
 }
 
@@ -68,13 +70,35 @@ function createLineFilter(line) {
   displacement.setAttribute("scale", "0");
   displacement.setAttribute("xChannelSelector", "R");
   displacement.setAttribute("yChannelSelector", "G");
+  displacement.setAttribute("result", "displaced-text");
 
-  filter.append(turbulence, displacement);
+  const grayscale = document.createElementNS(svgNamespace, "feColorMatrix");
+  grayscale.setAttribute("in", "texture-noise");
+  grayscale.setAttribute("type", "matrix");
+  grayscale.setAttribute("values", "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .333 .333 .333 0 0");
+  grayscale.setAttribute("result", "grain-alpha");
+
+  const transfer = document.createElementNS(svgNamespace, "feComponentTransfer");
+  transfer.setAttribute("in", "grain-alpha");
+  transfer.setAttribute("result", "disintegrate-mask");
+  const alpha = document.createElementNS(svgNamespace, "feFuncA");
+  alpha.setAttribute("type", "linear");
+  alpha.setAttribute("slope", "12");
+  alpha.setAttribute("intercept", "-0.1");
+  transfer.append(alpha);
+
+  const fragment = document.createElementNS(svgNamespace, "feComposite");
+  fragment.setAttribute("in", "displaced-text");
+  fragment.setAttribute("in2", "disintegrate-mask");
+  fragment.setAttribute("operator", "in");
+
+  filter.append(turbulence, displacement, grayscale, transfer, fragment);
   textureFilters.append(filter);
   line.dataset.filterId = id;
   line.dataset.born = performance.now();
   line.style.filter = `url(#${id})`;
   displacementMaps.set(line, displacement);
+  noiseThresholds.set(line, alpha);
 }
 
 createLineFilter.nextId = 0;
