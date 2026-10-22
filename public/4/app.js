@@ -1,83 +1,137 @@
-const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
 const stream = document.querySelector("#word-stream");
 
-// Words are sampled from the channel's text blocks; repeats are part of the loop.
+// Text blocks from the linked Are.na channel.
 const notes = [
   "there are parts of me that only exist because i met you",
-  "how do you become a home for people how do you put them at ease make them feel at home in the strangest of circumstances",
+  "how do you become a home for people? how do you put them at ease, make them feel at home in the strangest of circumstances",
   "heartbreak expands your capacity to love",
   "the consequences of feeling things so deeply",
   "get lost in tiny worlds",
   "habibi everything okay",
   "i hate that i still dream about you",
   "i made us back into strangers because it was the only way i could heal",
-  "don't let it consume you let it guide you",
-  "we were meant to love each other just not forever",
-  "how much is your attention worth",
-  "my first kiss my first friend my first pet my first love my first teacher",
+  "don't let it consume you, let it guide you",
+  "we were meant to love each other, just not forever",
+  "how much is your attention worth?",
+  "my first kiss, my first friend, my first pet, my first love, my first teacher",
   "i wanted to prove to you i could be loved",
-  "careful you're losing yourself again",
-  "if you ever loved me never tell me",
-  "to expect instant responses from anyone is to hope for them to never be absorbed in their own present could any hope be less loving",
+  "careful, you're losing yourself again",
+  "if you ever loved me, never tell me",
+  "to expect instant responses from anyone is to hope for them to never be absorbed in their own present. Could any hope be less loving?",
   "discipline as love letter to future self",
   "our aliveness is our erotic nature",
-  "my desire is safe my desire is sacred my desire is a gift",
-  "no person place or thing is my protection and safety only love itself",
+  "my desire is safe. My desire is sacred. My desire is a gift.",
+  "no person, place or thing is my protection and safety—only love itself",
   "venus in her highest octave",
   "the softening of the karmic knot",
-  "your erotic field carries memory intention ancestral echoes and creative power"
-];
-const words = notes.join(" ").toLowerCase().match(/[\p{L}\p{N}’'-]+/gu);
-const rows = [];
+  "your erotic field carries memory, intention, ancestral echoes, and creative power"
+].filter(note => note.trim().split(/\s+/).length >= 5);
+
 const maxRows = 10;
-const motionDuration = 1450;
-const motionEasing = "cubic-bezier(.4, 0, .2, 1)";
+const characterDelay = 24;
+let previousNote = -1;
 
-function addWord() {
-  const word = words[Math.floor(Math.random() * words.length)];
-  const row = document.createElement("div");
-  row.className = "word-row";
-  row.textContent = word;
-  row.setAttribute("aria-hidden", "true");
+function wordsPerLine(note) {
+  const words = note.trim().split(/\s+/);
+  const lineCount = Math.max(1, Math.floor(words.length / 5));
+  const baseSize = Math.floor(words.length / lineCount);
+  const extraWords = words.length % lineCount;
+  const lines = [];
+  let offset = 0;
 
-  const wasFull = rows.length === maxRows;
-  const exiting = wasFull ? rows.shift() : null;
-  if (exiting) {
-    exiting.animate([
-      { transform: "translateY(0) scale(1)", opacity: 1 },
-      { transform: "translateY(-100%) scale(0)", opacity: 0 }
-    ], { duration: motionDuration, easing: motionEasing, fill: "forwards" });
-    setTimeout(() => exiting.remove(), motionDuration);
+  for (let line = 0; line < lineCount; line++) {
+    const length = baseSize + (line < extraWords ? 1 : 0);
+    lines.push(words.slice(offset, offset + length).join(" "));
+    offset += length;
   }
-
-  rows.forEach((existing, index) => {
-    const oldIndex = wasFull ? index + 1 : index;
-    const oldSlot = wasFull ? oldIndex : maxRows - (rows.length + 1) + oldIndex + 1;
-    const newSlot = maxRows - (rows.length + 1) + index;
-    existing.animate([
-      { transform: `translateY(${oldSlot * 100}%) scale(1)`, opacity: 1 },
-      { transform: `translateY(${newSlot * 100}%) scale(1)`, opacity: 1 }
-    ], { duration: motionDuration, easing: motionEasing, fill: "forwards" });
-  });
-
-  stream.append(row);
-  const index = maxRows - (rows.length + 1) + rows.length;
-  row.animate([
-    { transform: `translateY(${(index + 1) * 100}%) scale(0)`, opacity: 0 },
-    { transform: `translateY(${index * 100}%) scale(1)`, opacity: 1 }
-  ], { duration: motionDuration, easing: motionEasing, fill: "forwards" });
-  rows.push(row);
+  return lines;
 }
 
-if (reduceMotion.matches) {
-  for (let i = 0; i < maxRows; i++) {
-    const row = document.createElement("div");
-    row.className = "word-row";
-    row.textContent = words[Math.floor(Math.random() * words.length)];
-    row.style.transform = `translateY(${i * 100}%)`;
-    stream.append(row);
+function fitLine(line) {
+  line.style.fontSize = "";
+  const measureCanvas = document.createElement("canvas");
+  const context = measureCanvas.getContext("2d");
+  const style = getComputedStyle(line);
+  const baseSize = Number.parseFloat(style.fontSize);
+  context.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+  const width = context.measureText(line.dataset.fullText || line.textContent).width;
+  const available = line.clientWidth;
+  if (width > available) line.style.fontSize = `${baseSize * available / width}px`;
+}
+
+function keepLatestRows() {
+  stream.scrollTop = stream.scrollHeight;
+  while (stream.childElementCount > maxRows) stream.firstElementChild.remove();
+  stream.scrollTop = stream.scrollHeight;
+}
+
+function addLine(text) {
+  const line = document.createElement("div");
+  line.className = "note-line";
+  line.dataset.fullText = text;
+  stream.append(line);
+  keepLatestRows();
+  return line;
+}
+
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function writeLine(text) {
+  const line = addLine(text);
+  fitLine(line);
+  for (const character of text) {
+    if (character === " ") {
+      line.append(document.createTextNode(" "));
+    } else {
+      const letter = document.createElement("span");
+      letter.className = "letter";
+      letter.textContent = character;
+      line.append(letter);
+    }
+    keepLatestRows();
+    await wait(characterDelay);
   }
+  fitLine(line);
+  await wait(180);
+}
+
+async function writeNote(note) {
+  const lines = wordsPerLine(note);
+  for (const line of lines) await writeLine(line);
+
+  const ornament = addLine("⚜");
+  ornament.classList.add("passage-break");
+  ornament.append(document.createTextNode("⚜"));
+  fitLine(ornament);
+  keepLatestRows();
+  await wait(1100);
+}
+
+async function run() {
+  while (true) {
+    let index = Math.floor(Math.random() * notes.length);
+    if (notes.length > 1 && index === previousNote) index = (index + 1) % notes.length;
+    previousNote = index;
+    await writeNote(notes[index]);
+  }
+}
+
+if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  const staticText = notes.slice(0, maxRows - 1);
+  for (const note of staticText) {
+    const line = addLine(note);
+    line.textContent = note;
+    fitLine(line);
+  }
+  const ornament = addLine("⚜");
+  ornament.classList.add("passage-break");
+  ornament.textContent = "⚜";
 } else {
-  addWord();
-  const ticker = setInterval(addWord, 1700);
+  run();
 }
+
+addEventListener("resize", () => {
+  stream.querySelectorAll(".note-line").forEach(fitLine);
+});
