@@ -36,6 +36,9 @@ main { position: fixed; inset: 0; }
 
 #note-flow { display: block; }
 .note { display: inline; }
+.note.disintegrating { color: transparent !important; pointer-events: none; }
+.note.disintegrating a { color: transparent !important; text-decoration-color: transparent; }
+.note.disintegrated { visibility: hidden; pointer-events: none; }
 
 .word-link {
   color: inherit;
@@ -47,11 +50,11 @@ main { position: fixed; inset: 0; }
 .word-link:hover { text-decoration: underline; text-decoration-thickness: .045em; }
 .note-star { display: inline; white-space: pre; padding-inline: .08em; color: #111; }
 
-.texture-definitions {
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
+#particle-layer {
+  position: fixed;
+  z-index: 5;
+  inset: 0;
+  pointer-events: none;
 }
 
 .letter {
