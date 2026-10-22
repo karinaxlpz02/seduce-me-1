@@ -34,6 +34,12 @@ let rowCount = 0;
 function addNoteRow(side) {
   const row = document.createElement("div");
   row.className = `note-row ${side}`;
+  const pairIndex = Math.max(0, Math.floor((rowCount - 1) / 2));
+  const phase = (pairIndex % 16) / 16 * Math.PI * 2;
+  const closeness = (1 - Math.cos(phase)) / 2;
+  const centerGap = 22 - closeness * 10;
+  const offset = side === "left" ? 22 - centerGap : 22 + centerGap;
+  row.style.setProperty("--note-offset", `${offset}%`);
   const leftOrnament = document.createElement("span");
   leftOrnament.className = "ornament";
   leftOrnament.textContent = "⚜";
@@ -83,6 +89,7 @@ async function run() {
 
 if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
   notes.forEach((note, index) => {
+    rowCount = index + 1;
     const text = addNoteRow(index % 2 === 0 ? "left" : "right");
     text.textContent = note;
   });

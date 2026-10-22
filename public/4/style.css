@@ -53,17 +53,9 @@ main {
   width: 56%;
   max-width: 56%;
   min-height: 1.25em;
-  margin: 0 0 .25em 0;
+  margin: 0 0 .25em var(--note-offset, 0%);
   color: #FFFFFF;
   filter: url(#word-inner-shadow);
-}
-
-.note-row.left {
-  margin-left: 0;
-}
-
-.note-row.right {
-  margin-left: 44%;
 }
 
 .note-text {
@@ -104,6 +96,5 @@ main {
   .composition, #word-stream { min-height: calc(100vh - 2.5rem); }
   .composition { width: 92vw; }
   #word-stream { width: 100%; font-size: clamp(1rem, 5vw, 1.4rem); }
-  .note-row { width: 54%; max-width: 54%; }
-  .note-row.right { margin-left: 46%; }
+  .note-row { width: 56%; max-width: 56%; }
 }
