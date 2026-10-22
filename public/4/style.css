@@ -42,16 +42,24 @@ main {
 
 #word-stream {
   position: absolute;
-  inset: 50% 0 auto;
+  top: 50%;
+  left: 50%;
+  right: auto;
+  width: 100vw;
   height: 12em;
-  transform: translateY(-50%);
+  transform: translate(-50%, -50%);
   overflow: hidden;
-  font-size: clamp(1.35rem, 2.1vw, 2.2rem);
+  font-size: clamp(2rem, 4vw, 3.6rem);
   line-height: 1.2;
   letter-spacing: -.035em;
 }
 
 .note-line {
+  position: relative;
+  left: 50%;
+  width: max-content;
+  min-width: 100vw;
+  transform: translateX(-50%);
   display: block;
   height: 1.2em;
   line-height: 1.2;
@@ -65,7 +73,7 @@ main {
 .letter {
   display: inline-block;
   transform-origin: center center;
-  animation: letter-scale 760ms cubic-bezier(.4, 0, .2, 1) both;
+  animation: letter-scale 650ms cubic-bezier(.4, 0, .2, 1) both;
   will-change: transform, opacity;
 }
 
@@ -83,5 +91,5 @@ main {
 
 @media (max-width: 600px) {
   .composition { width: 94vw; height: min(76vh, 720px); min-height: 420px; padding: 38px 24px; }
-  #word-stream { font-size: clamp(1.05rem, 5.2vw, 1.45rem); }
+  #word-stream { font-size: clamp(1.5rem, 7vw, 2.4rem); }
 }

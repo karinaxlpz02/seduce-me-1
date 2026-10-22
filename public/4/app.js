@@ -28,7 +28,7 @@ const notes = [
 ].filter(note => note.trim().split(/\s+/).length >= 5);
 
 const maxRows = 10;
-const characterDelay = 80;
+const characterDelay = 60;
 let previousNote = -1;
 
 function wordsPerLine(note) {
@@ -47,18 +47,6 @@ function wordsPerLine(note) {
   return lines;
 }
 
-function fitLine(line) {
-  line.style.fontSize = "";
-  const measureCanvas = document.createElement("canvas");
-  const context = measureCanvas.getContext("2d");
-  const style = getComputedStyle(line);
-  const baseSize = Number.parseFloat(style.fontSize);
-  context.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-  const width = context.measureText(line.dataset.fullText || line.textContent).width;
-  const available = line.clientWidth;
-  if (width > available) line.style.fontSize = `${baseSize * available / width}px`;
-}
-
 function keepLatestRows() {
   stream.scrollTop = stream.scrollHeight;
   while (stream.childElementCount > maxRows) stream.firstElementChild.remove();
@@ -68,7 +56,6 @@ function keepLatestRows() {
 function addLine(text) {
   const line = document.createElement("div");
   line.className = "note-line";
-  line.dataset.fullText = text;
   stream.append(line);
   keepLatestRows();
   return line;
@@ -80,7 +67,6 @@ function wait(ms) {
 
 async function writeLine(text) {
   const line = addLine(text);
-  fitLine(line);
   for (const character of text) {
     if (character === " ") {
       line.append(document.createTextNode(" "));
@@ -93,7 +79,6 @@ async function writeLine(text) {
     keepLatestRows();
     await wait(characterDelay);
   }
-  fitLine(line);
   await wait(180);
 }
 
@@ -104,7 +89,6 @@ async function writeNote(note) {
   const ornament = addLine("⚜");
   ornament.classList.add("passage-break");
   ornament.append(document.createTextNode("⚜"));
-  fitLine(ornament);
   keepLatestRows();
   await wait(1100);
 }
@@ -123,7 +107,6 @@ if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
   for (const note of staticText) {
     const line = addLine(note);
     line.textContent = note;
-    fitLine(line);
   }
   const ornament = addLine("⚜");
   ornament.classList.add("passage-break");
@@ -131,7 +114,3 @@ if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
 } else {
   run();
 }
-
-addEventListener("resize", () => {
-  stream.querySelectorAll(".note-line").forEach(fitLine);
-});
