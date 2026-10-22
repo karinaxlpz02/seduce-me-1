@@ -36,9 +36,6 @@ main { position: fixed; inset: 0; }
 
 #note-flow { display: block; }
 .note { display: inline; }
-.note.disintegrating { color: transparent !important; pointer-events: none; }
-.note.disintegrating a { color: transparent !important; text-decoration-color: transparent; }
-.note.disintegrated { visibility: hidden; pointer-events: none; }
 
 .word-link {
   color: inherit;
@@ -63,6 +60,15 @@ main { position: fixed; inset: 0; }
   animation: letter-scale 280ms cubic-bezier(.2, .7, .25, 1) both;
   will-change: transform, opacity;
 }
+
+.letter.disintegrating {
+  animation: none;
+  opacity: 0;
+  transition: opacity 1.2s ease-out;
+  pointer-events: none;
+}
+
+.letter.disintegrated { animation: none; opacity: 0; visibility: hidden; }
 
 @keyframes letter-scale {
   from { opacity: 0; transform: scale(.15); }

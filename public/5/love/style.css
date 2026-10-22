@@ -26,13 +26,14 @@ body { min-height: 100svh; overflow: hidden; }
 #love-note {
   display: flex;
   align-items: center;
+  justify-content: center;
   width: 100%;
   height: 100%;
-  font-size: clamp(3rem, 12.8vw, 17rem);
-  line-height: .88;
-  letter-spacing: -.075em;
-  overflow-wrap: anywhere;
-  word-break: normal;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: clamp(4rem, 18vw, 25rem);
+  line-height: .9;
+  letter-spacing: -.09em;
 }
 
 .love-letter { display: inline-block; animation: arrive 180ms cubic-bezier(.16, .7, .25, 1) both; }
@@ -53,7 +54,7 @@ body { min-height: 100svh; overflow: hidden; }
 
 @media (max-width: 600px) {
   #love-screen { padding: 6vw; }
-  #love-note { font-size: clamp(3rem, 17vw, 8rem); }
+  #love-note { font-size: clamp(3rem, 22vw, 10rem); }
 }
 
 @media (prefers-reduced-motion: reduce) {

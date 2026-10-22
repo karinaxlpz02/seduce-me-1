@@ -7,7 +7,8 @@ const context = canvas.getContext("2d");
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const relatedWords = /^(?:desire|desires|desired|desiring|love|loves|loved|loving|lover|lovers|beloved|erotic|erotica|intimacy|intimate|passion|passionate|longing|yearn|yearning|crave|craving|heart|heartbreak|kiss|kisses|affection|tenderness|pleasure|sensual|sensuality|lust|care|devotion|adore|adored|adoration|romance|romantic|touch|aliveness)[’']?$/i;
 const dissolveAfter = 5000;
-const particleLifespan = 7600;
+const particleLifespan = 4300;
+const characterStagger = 145;
 const particleGroups = new Set();
 let previousNote = -1;
 let pixelRatio = 1;
@@ -46,8 +47,8 @@ function buildText(note, text) {
   }
 }
 
-function createParticles(note) {
-  const bounds = note.getBoundingClientRect();
+function createParticles(letter) {
+  const bounds = letter.getBoundingClientRect();
   if (!bounds.width || !bounds.height) return null;
 
   const mask = document.createElement("canvas");
@@ -57,17 +58,14 @@ function createParticles(note) {
   maskContext.fillStyle = "#111";
   maskContext.textBaseline = "alphabetic";
 
-  for (const letter of note.querySelectorAll(".letter")) {
-    const rect = letter.getBoundingClientRect();
-    const style = getComputedStyle(letter);
-    maskContext.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-    maskContext.fillText(letter.textContent, rect.left - bounds.left, rect.top - bounds.top + rect.height * .82);
-  }
+  const style = getComputedStyle(letter);
+  maskContext.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+  maskContext.fillText(letter.textContent, 0, bounds.height * .82);
 
   const pixels = maskContext.getImageData(0, 0, mask.width, mask.height).data;
   const candidates = [];
-  for (let y = 0; y < mask.height; y += 3) {
-    for (let x = 0; x < mask.width; x += 3) {
+  for (let y = 0; y < mask.height; y += 2) {
+    for (let x = 0; x < mask.width; x += 2) {
       if (pixels[(y * mask.width + x) * 4 + 3] > 48) candidates.push({ x, y });
     }
   }
@@ -77,14 +75,9 @@ function createParticles(note) {
     [candidates[index], candidates[other]] = [candidates[other], candidates[index]];
   }
 
-  if (!candidates.length) {
-    for (const letter of note.querySelectorAll(".letter")) {
-      const rect = letter.getBoundingClientRect();
-      candidates.push({ x: rect.left - bounds.left, y: rect.top - bounds.top + rect.height / 2 });
-    }
-  }
+  if (!candidates.length) candidates.push({ x: bounds.width / 2, y: bounds.height / 2 });
 
-  const count = Math.min(candidates.length, 1400);
+  const count = Math.min(candidates.length, 120);
   const particles = candidates.slice(0, count).map(point => {
     const angle = Math.atan2(point.y - bounds.height / 2, point.x - bounds.width / 2) + (Math.random() - .5) * 1.3;
     const speed = 18 + Math.random() * 54;
@@ -93,20 +86,20 @@ function createParticles(note) {
       y: point.y,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed - 10,
-      size: .45 + Math.random() * 1.15,
+      size: .5 + Math.random() * .8,
       phase: Math.random() * Math.PI * 2,
       drift: 1 + Math.random() * 3
     };
   });
 
-  return { note, particles, left: bounds.left, top: bounds.top, started: performance.now() };
+  return { letter, particles, started: performance.now() };
 }
 
-function startDisintegration(note) {
-  const group = createParticles(note);
-  note.classList.add("disintegrating");
+function startDisintegration(letter) {
+  const group = createParticles(letter);
+  letter.classList.add("disintegrating");
   if (group) particleGroups.add(group);
-  note.dataset.particles = "started";
+  letter.dataset.particles = "started";
 }
 
 function paintParticles(now) {
@@ -116,24 +109,24 @@ function paintParticles(now) {
   for (const group of particleGroups) {
     const age = now - group.started;
     const progress = Math.min(age / particleLifespan, 1);
-    const bounds = group.note.getBoundingClientRect();
+    const bounds = group.letter.getBoundingClientRect();
     const left = bounds.left;
     const top = bounds.top;
-    const spread = Math.pow(progress, .58);
-    const opacity = Math.pow(1 - progress, 1.4);
+    const spread = Math.min(age / 1100, 1);
+    const opacity = Math.min(age / 650, 1) * Math.pow(1 - progress, 1.5);
 
     for (const particle of group.particles) {
       const flutterX = Math.sin(age * .0012 + particle.phase) * particle.drift * spread * 5;
       const flutterY = Math.cos(age * .001 + particle.phase) * particle.drift * spread * 4;
-      const x = left + particle.x + particle.vx * age * .001 * spread + flutterX;
-      const y = top + particle.y + particle.vy * age * .001 * spread + flutterY;
+      const x = left + particle.x + particle.vx * age * .001 + flutterX;
+      const y = top + particle.y + particle.vy * age * .001 + flutterY;
       context.fillStyle = `rgba(17,17,17,${opacity})`;
       context.fillRect(x, y, particle.size, particle.size);
     }
 
     if (progress >= 1) {
-      group.note.classList.remove("disintegrating");
-      group.note.classList.add("disintegrated");
+      group.letter.classList.remove("disintegrating");
+      group.letter.classList.add("disintegrated");
       particleGroups.delete(group);
     }
   }
@@ -169,6 +162,7 @@ async function writeNote(text) {
   }
 
   note.dataset.born = performance.now();
+  note._letters = [...note.querySelectorAll(".letter")];
   const star = document.createElement("span");
   star.className = "note-star";
   star.setAttribute("aria-hidden", "true");
@@ -180,12 +174,16 @@ async function writeNote(text) {
 
 function updateNotes() {
   const now = performance.now();
-  for (const note of flow.querySelectorAll(".note[data-born]:not([data-particles])")) {
-    if (now - Number(note.dataset.born) >= dissolveAfter) startDisintegration(note);
+  for (const note of flow.querySelectorAll(".note[data-born]")) {
+    const elapsed = now - Number(note.dataset.born) - dissolveAfter;
+    note._letters?.forEach((letter, index) => {
+      if (elapsed >= index * characterStagger && !letter.dataset.particles) startDisintegration(letter);
+    });
   }
   const streamTop = stream.getBoundingClientRect().top;
-  for (const note of flow.querySelectorAll(".note.disintegrated")) {
-    if (note.getBoundingClientRect().bottom < streamTop - 120) {
+  for (const note of flow.querySelectorAll(".note[data-born]")) {
+    const allDissolved = note._letters?.every(letter => letter.classList.contains("disintegrated"));
+    if (allDissolved && note.getBoundingClientRect().bottom < streamTop - 120) {
       const separator = note.nextElementSibling;
       if (separator?.classList.contains("note-star")) separator.remove();
       note.remove();
