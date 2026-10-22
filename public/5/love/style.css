@@ -37,7 +37,7 @@ body { min-height: 100svh; overflow: hidden; }
 }
 
 .love-letter { display: inline-block; animation: arrive 180ms cubic-bezier(.16, .7, .25, 1) both; }
-#love-note.leaving { animation: leave 300ms ease-in forwards; }
+#love-note.leaving { animation: leave 620ms ease-in forwards; }
 
 .back-link {
   position: absolute;

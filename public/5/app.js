@@ -7,10 +7,10 @@ const context = canvas.getContext("2d");
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const relatedWords = /^(?:desire|desires|desired|desiring|love|loves|loved|loving|lover|lovers|beloved|erotic|erotica|intimacy|intimate|passion|passionate|longing|yearn|yearning|crave|craving|heart|heartbreak|kiss|kisses|affection|tenderness|pleasure|sensual|sensuality|lust|care|devotion|adore|adored|adoration|romance|romantic|touch|aliveness)[’']?$/i;
 const dissolveAfter = 5000;
-const particleLifespan = 4300;
-const characterStagger = 145;
+const particleLifespan = 9000;
+const characterStagger = 420;
 const particleGroups = new Set();
-let previousNote = -1;
+let nextNote = 0;
 let pixelRatio = 1;
 
 function resizeCanvas() {
@@ -70,25 +70,23 @@ function createParticles(letter) {
     }
   }
 
-  for (let index = candidates.length - 1; index > 0; index--) {
-    const other = Math.floor(Math.random() * (index + 1));
-    [candidates[index], candidates[other]] = [candidates[other], candidates[index]];
-  }
-
   if (!candidates.length) candidates.push({ x: bounds.width / 2, y: bounds.height / 2 });
 
   const count = Math.min(candidates.length, 120);
-  const particles = candidates.slice(0, count).map(point => {
-    const angle = Math.atan2(point.y - bounds.height / 2, point.x - bounds.width / 2) + (Math.random() - .5) * 1.3;
-    const speed = 18 + Math.random() * 54;
+  const stride = Math.max(1, Math.ceil(candidates.length / count));
+  const particles = candidates.filter((_, index) => index % stride === 0).slice(0, count).map((point, index) => {
+    const seed = (letter.textContent.codePointAt(0) * 31 + index * 67 + point.x * 17 + point.y * 13) % 997;
+    const variation = (seed % 31 - 15) / 100;
+    const angle = Math.atan2(point.y - bounds.height / 2, point.x - bounds.width / 2) + variation;
+    const speed = 14 + (seed * 37 % 100) / 100 * 32;
     return {
       x: point.x,
       y: point.y,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed - 10,
-      size: .5 + Math.random() * .8,
-      phase: Math.random() * Math.PI * 2,
-      drift: 1 + Math.random() * 3
+      size: .55 + (seed * 13 % 100) / 100 * .6,
+      phase: (seed % 360) * Math.PI / 180,
+      drift: .7 + (seed % 10) / 10
     };
   });
 
@@ -112,8 +110,8 @@ function paintParticles(now) {
     const bounds = group.letter.getBoundingClientRect();
     const left = bounds.left;
     const top = bounds.top;
-    const spread = Math.min(age / 1100, 1);
-    const opacity = Math.min(age / 650, 1) * Math.pow(1 - progress, 1.5);
+    const spread = Math.min(age / 2600, 1);
+    const opacity = Math.min(age / 1500, 1) * Math.pow(1 - progress, 1.5);
 
     for (const particle of group.particles) {
       const flutterX = Math.sin(age * .0012 + particle.phase) * particle.drift * spread * 5;
@@ -194,10 +192,8 @@ function updateNotes() {
 
 async function run() {
   while (true) {
-    let index = Math.floor(Math.random() * notes.length);
-    if (notes.length > 1 && index === previousNote) index = (index + 1) % notes.length;
-    previousNote = index;
-    await writeNote(notes[index]);
+    await writeNote(notes[nextNote]);
+    nextNote = (nextNote + 1) % notes.length;
   }
 }
 

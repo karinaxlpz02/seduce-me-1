@@ -1,9 +1,9 @@
 import { notes } from "../notes.js";
 
 const output = document.querySelector("#love-note");
-const characterDelay = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 55;
+const characterDelay = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 125;
 const words = notes.flatMap(note => note.trim().split(/\s+/));
-let previous = -1;
+let nextWord = 0;
 
 function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -19,17 +19,15 @@ async function showNote(text) {
     output.append(letter);
     if (characterDelay) await wait(characterDelay);
   }
-  await wait(520);
+  await wait(850);
   output.classList.add("leaving");
-  await wait(320);
+  await wait(620);
 }
 
 async function play() {
   while (true) {
-    let index = Math.floor(Math.random() * words.length);
-    if (words.length > 1 && index === previous) index = (index + 1) % words.length;
-    previous = index;
-    await showNote(words[index]);
+    await showNote(words[nextWord]);
+    nextWord = (nextWord + 1) % words.length;
   }
 }
 
