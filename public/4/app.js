@@ -56,8 +56,8 @@ function resize() {
 }
 
 function textStar(x, y, time, label, index) {
-  const radius = Math.min(46, Math.max(20, width * .045), height * .055);
-  const phase = time * .00065 + index * 1.7;
+  const radius = Math.min(90, Math.max(30, width * .1), height * .1);
+  const phase = time * .0012 + index * 1.7;
   const pulse = reduceMotion.matches ? 0 : Math.sin(phase);
   const sway = reduceMotion.matches ? 0 : Math.sin(phase * .7) * .04;
   const rotation = reduceMotion.matches ? 0 : Math.sin(phase * .55) * .055;
@@ -69,7 +69,7 @@ function textStar(x, y, time, label, index) {
 
   // Four embroidered rays frame a small window for the moving letters.
   ctx.strokeStyle = "rgb(38 49 57 / 58%)";
-  ctx.lineWidth = 1.3;
+  ctx.lineWidth = 1.5;
   ctx.lineCap = "round";
   ctx.beginPath();
   ctx.moveTo(0, -radius); ctx.quadraticCurveTo(3, -5, radius, 0);
@@ -94,13 +94,23 @@ function textStar(x, y, time, label, index) {
   ctx.font = `${fontSize}px "Serifbabe SIGMA Test", Georgia, serif`;
   const rows = label.split("|");
   rows.forEach((row, rowIndex) => {
-    const yOffset = (rowIndex - (rows.length - 1) / 2) * fontSize * .92;
-    const xOffset = reduceMotion.matches ? 0 : Math.sin(phase + rowIndex) * radius * .12;
-    ctx.save();
-    ctx.translate(xOffset, yOffset + pulse * radius * .055);
-    ctx.rotate(sway);
-    ctx.fillText(row, 0, 0);
-    ctx.restore();
+    const rowY = reduceMotion.matches ? 0 : Math.sin(phase * 1.5 + rowIndex) * fontSize * .16;
+    const rowX = reduceMotion.matches ? 0 : Math.sin(phase + rowIndex) * radius * .08;
+    const yOffset = (rowIndex - (rows.length - 1) / 2) * fontSize * 1.1;
+    const letters = [...row];
+    const widths = letters.map((letter) => ctx.measureText(letter).width);
+    let cursor = -widths.reduce((sum, letterWidth) => sum + letterWidth, 0) / 2;
+    letters.forEach((letter, letterIndex) => {
+      const letterWidth = widths[letterIndex];
+      const wiggle = reduceMotion.matches ? 0 : Math.sin(phase * 1.7 + letterIndex * .9 + rowIndex) * fontSize * .1;
+      const slide = reduceMotion.matches ? 0 : Math.sin(phase + letterIndex * .65) * fontSize * .015;
+      ctx.save();
+      ctx.translate(cursor + letterWidth / 2 + rowX + slide, yOffset + rowY + wiggle);
+      ctx.rotate(reduceMotion.matches ? 0 : sway + Math.sin(phase + letterIndex) * .02);
+      ctx.fillText(letter, 0, 0);
+      ctx.restore();
+      cursor += letterWidth;
+    });
   });
   ctx.restore();
 
@@ -124,8 +134,8 @@ function draw(time = 0) {
 
   const cx = width / 2;
   const cy = height / 2;
-  const radius = Math.min(46, Math.max(20, width * .045), height * .055);
-  const offset = radius * 1.42;
+  const radius = Math.min(90, Math.max(30, width * .1), height * .1);
+  const offset = radius * 1.12;
   const labels = ["I|want", "to|feel", "some|thing", "real"];
   textStar(cx - offset, cy - offset, time, labels[0], 0);
   textStar(cx + offset, cy - offset, time, labels[1], 1);
