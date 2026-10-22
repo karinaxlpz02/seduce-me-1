@@ -43,11 +43,11 @@ main {
 #word-stream {
   position: absolute;
   inset: 50% 0 auto;
-  height: 5em;
+  height: 6em;
   transform: translateY(-50%);
   overflow: hidden;
   font-size: clamp(2.2rem, 5vw, 5rem);
-  line-height: 1;
+  line-height: 1.2;
   letter-spacing: -.035em;
 }
 
@@ -55,41 +55,14 @@ main {
   position: absolute;
   inset: 0 0 auto;
   display: grid;
-  height: 1em;
+  height: 1.2em;
   place-items: center;
   white-space: nowrap;
   transform-origin: center center;
   will-change: transform, opacity;
 }
 
-.star {
-  position: absolute;
-  color: rgb(38 49 57 / 75%);
-  font-family: Georgia, serif;
-  font-size: clamp(1.5rem, 2.4vw, 2rem);
-  line-height: 1;
-  animation: star-twitch 2.8s ease-in-out infinite;
-}
-
-.star-nw { top: 28px; left: 32px; }
-.star-ne { top: 28px; right: 32px; animation-delay: -.7s; }
-.star-sw { bottom: 28px; left: 32px; animation-delay: -1.4s; }
-.star-se { right: 32px; bottom: 28px; animation-delay: -2.1s; }
-
-@keyframes star-twitch {
-  0%, 100% { transform: scale(.92) rotate(-4deg); opacity: .62; }
-  50% { transform: scale(1.08) rotate(4deg); opacity: .9; }
-}
-
 @media (max-width: 600px) {
-  .composition { width: 94vw; height: min(64vh, 470px); min-height: 300px; padding: 38px 24px; }
+  .composition { width: 94vw; height: min(70vh, 520px); min-height: 340px; padding: 38px 24px; }
   #word-stream { font-size: clamp(1.8rem, 9vw, 3.5rem); }
-  .star-nw { top: 20px; left: 13px; }
-  .star-ne { top: 20px; right: 13px; }
-  .star-sw { bottom: 20px; left: 13px; }
-  .star-se { right: 13px; bottom: 20px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .star { animation: none; }
 }
