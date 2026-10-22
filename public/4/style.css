@@ -45,7 +45,7 @@ main {
   top: 50%;
   left: 50%;
   right: auto;
-  width: calc(100vw - 4rem);
+  width: min(82vw, 1120px);
   height: min(68vh, 570px);
   transform: translate(-50%, -50%);
   overflow: hidden;
@@ -66,9 +66,12 @@ main {
   filter: url(#word-inner-shadow);
 }
 
+.note-row.left {
+  flex-direction: row-reverse;
+}
+
 .note-row.right {
   margin-left: 51%;
-  flex-direction: row-reverse;
 }
 
 .note-text {
@@ -77,8 +80,8 @@ main {
   overflow-wrap: anywhere;
 }
 
-.note-row.left .note-text { text-align: left; }
-.note-row.right .note-text { text-align: right; }
+.note-row.left .note-text { text-align: right; }
+.note-row.right .note-text { text-align: left; }
 
 .ornament {
   flex: 0 0 auto;
