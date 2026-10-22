@@ -82,6 +82,7 @@ main {
 .letter {
   position: relative;
   display: inline-block;
+  color: rgb(17 17 17 / var(--solid-level, 1));
   transform-origin: center center;
   animation: letter-scale 650ms cubic-bezier(.4, 0, .2, 1) both;
   will-change: transform, opacity;
@@ -98,7 +99,7 @@ main {
   background-position: var(--grain-x, 0) var(--grain-y, 0);
   background-clip: text;
   -webkit-background-clip: text;
-  opacity: calc(var(--texture-level, 0) * .72);
+  opacity: calc(var(--inside-texture, 0) * .72);
   mix-blend-mode: screen;
   pointer-events: none;
   transition: opacity 160ms linear;

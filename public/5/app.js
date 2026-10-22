@@ -68,8 +68,10 @@ function updateTexture() {
   scatterContext.clearRect(0, 0, innerWidth, innerHeight);
 
   for (const letter of stream.querySelectorAll(".letter[data-born]")) {
-    const age = Math.min((now - Number(letter.dataset.born)) / 9000, 1);
-    letter.style.setProperty("--texture-level", age.toFixed(2));
+    const age = Math.min((now - Number(letter.dataset.born)) / 7000, 1);
+    const insideTexture = Math.min(age * 2, 1) * (1 - age);
+    letter.style.setProperty("--solid-level", (1 - age).toFixed(2));
+    letter.style.setProperty("--inside-texture", insideTexture.toFixed(2));
     if (age < .08) continue;
 
     const rect = letter.getBoundingClientRect();
