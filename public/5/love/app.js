@@ -2,8 +2,16 @@ import { notes } from "../notes.js";
 
 const output = document.querySelector("#love-note");
 const characterDelay = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 125;
-const words = notes.flatMap(note => note.trim().split(/\s+/));
-let nextWord = 0;
+const selectedWord = new URLSearchParams(location.search).get("word")?.toLocaleLowerCase();
+const matchingNotes = selectedWord
+  ? notes.filter(note => note.split(/\s+/).some(word => {
+      const cleanWord = word.replace(/^[^\p{L}]+|[^\p{L}'’]+$/gu, "").toLocaleLowerCase();
+      return cleanWord === selectedWord;
+    }))
+  : notes;
+const noteWords = matchingNotes.map(note => note.trim().split(/\s+/));
+let noteIndex = 0;
+let wordIndex = 0;
 
 function wait(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -26,8 +34,13 @@ async function showNote(text) {
 
 async function play() {
   while (true) {
-    await showNote(words[nextWord]);
-    nextWord = (nextWord + 1) % words.length;
+    const words = noteWords[noteIndex];
+    await showNote(words[wordIndex]);
+    wordIndex += 1;
+    if (wordIndex >= words.length) {
+      wordIndex = 0;
+      noteIndex = (noteIndex + 1) % noteWords.length;
+    }
   }
 }
 

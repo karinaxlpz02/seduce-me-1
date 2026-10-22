@@ -26,7 +26,7 @@ function makeWord(word) {
   const linked = relatedWords.test(cleanWord);
   const element = document.createElement(linked ? "a" : "span");
   element.className = linked ? "word-link" : "word";
-  if (linked) element.href = "./love/";
+  if (linked) element.href = `./love/?word=${encodeURIComponent(cleanWord.toLowerCase())}`;
   return element;
 }
 
