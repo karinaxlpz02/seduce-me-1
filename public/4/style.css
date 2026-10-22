@@ -46,10 +46,11 @@ main {
 
 .note-row {
   position: relative;
-  display: flex;
+  display: inline-flex;
   align-items: flex-start;
   gap: .35em;
-  width: 49%;
+  width: fit-content;
+  max-width: 49%;
   min-height: 1.25em;
   margin: 0 0 .25em 0;
   color: #FFFFFF;
@@ -65,7 +66,7 @@ main {
 }
 
 .note-text {
-  flex: 1;
+  flex: 0 1 auto;
   min-width: 0;
   overflow-wrap: anywhere;
 }
