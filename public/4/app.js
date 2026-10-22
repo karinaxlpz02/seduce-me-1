@@ -29,6 +29,7 @@ const notes = [
 ];
 const words = notes.join(" ").toLowerCase().match(/[\p{L}\p{N}’'-]+/gu);
 const rows = [];
+const maxRows = 10;
 const motionDuration = 1450;
 const motionEasing = "cubic-bezier(.4, 0, .2, 1)";
 
@@ -39,7 +40,7 @@ function addWord() {
   row.textContent = word;
   row.setAttribute("aria-hidden", "true");
 
-  const wasFull = rows.length === 5;
+  const wasFull = rows.length === maxRows;
   const exiting = wasFull ? rows.shift() : null;
   if (exiting) {
     exiting.animate([
@@ -51,8 +52,8 @@ function addWord() {
 
   rows.forEach((existing, index) => {
     const oldIndex = wasFull ? index + 1 : index;
-    const oldSlot = wasFull ? oldIndex : 5 - (rows.length + 1) + oldIndex + 1;
-    const newSlot = 5 - (rows.length + 1) + index;
+    const oldSlot = wasFull ? oldIndex : maxRows - (rows.length + 1) + oldIndex + 1;
+    const newSlot = maxRows - (rows.length + 1) + index;
     existing.animate([
       { transform: `translateY(${oldSlot * 100}%) scale(1)`, opacity: 1 },
       { transform: `translateY(${newSlot * 100}%) scale(1)`, opacity: 1 }
@@ -60,7 +61,7 @@ function addWord() {
   });
 
   stream.append(row);
-  const index = 5 - (rows.length + 1) + rows.length;
+  const index = maxRows - (rows.length + 1) + rows.length;
   row.animate([
     { transform: `translateY(${(index + 1) * 100}%) scale(0)`, opacity: 0 },
     { transform: `translateY(${index * 100}%) scale(1)`, opacity: 1 }
@@ -69,7 +70,7 @@ function addWord() {
 }
 
 if (reduceMotion.matches) {
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < maxRows; i++) {
     const row = document.createElement("div");
     row.className = "word-row";
     row.textContent = words[Math.floor(Math.random() * words.length)];
