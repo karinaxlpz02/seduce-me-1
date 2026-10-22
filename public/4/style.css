@@ -7,6 +7,7 @@
 :root {
   color-scheme: light;
   font-family: "Serifbabe SIGMA Test", Georgia, serif;
+  color: #FFFFFF;
   color: #20252a;
   background: linear-gradient(180deg, #F4EFFD 0%, #EDF4EF 30%, #FBFCFC 50%, #EDF4EF 70%, #F4EFFD 100%);
 }
@@ -57,10 +58,14 @@ main {
   display: grid;
   height: 1.2em;
   place-items: center;
+  color: #FFFFFF;
   white-space: nowrap;
   transform-origin: center center;
+  filter: url(#word-inner-shadow);
   will-change: transform, opacity;
 }
+
+.filters { position: absolute; width: 0; height: 0; overflow: hidden; }
 
 @media (max-width: 600px) {
   .composition { width: 94vw; height: min(70vh, 520px); min-height: 340px; padding: 38px 24px; }

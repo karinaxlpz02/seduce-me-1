@@ -5,10 +5,23 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#fbfcfc">
   <title>seduce-me-4</title>
-  <link rel="stylesheet" href="style.css?v=7">
+  <link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
   <main>
+    <svg class="filters" aria-hidden="true" focusable="false">
+      <filter id="word-inner-shadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur" />
+        <feOffset in="blur" dx="1" dy="1" result="offset-blur" />
+        <feComposite in="SourceAlpha" in2="offset-blur" operator="arithmetic" k2="-1" k3="1" result="inner-shadow" />
+        <feFlood flood-color="#E79FD4" result="shadow-color" />
+        <feComposite in="shadow-color" in2="inner-shadow" operator="in" result="colored-shadow" />
+        <feMerge>
+          <feMergeNode in="SourceGraphic" />
+          <feMergeNode in="colored-shadow" />
+        </feMerge>
+      </filter>
+    </svg>
     <div class="composition" aria-label="A stream of words from Notes on Are.na about Desire">
       <div id="word-stream" aria-live="off" aria-label="Five words at a time"></div>
     </div>
