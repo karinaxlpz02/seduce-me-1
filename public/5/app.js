@@ -1,7 +1,7 @@
 const stream = document.querySelector("#word-stream");
-const scatter = document.querySelector("#scatter");
-const scatterContext = scatter.getContext("2d");
-const letterFlecks = new WeakMap();
+const textureFilters = document.querySelector("#texture-filters");
+const displacementMaps = new WeakMap();
+const svgNamespace = "http://www.w3.org/2000/svg";
 
 // Text blocks from the linked Are.na channel.
 const notes = [
@@ -32,70 +32,52 @@ const notes = [
 
 const maxRows = 10;
 const characterDelay = 60;
-const maximumScatter = 24;
+const maximumDisplacement = 40.8;
 let previousNote = -1;
-let pixelRatio = 1;
-
-function makeFlecks(letter) {
-  let seed = Math.floor(Number(letter.dataset.born) * 1000) + letter.dataset.letter.codePointAt(0);
-  const random = () => {
-    seed = (seed * 16807) % 2147483647;
-    return (seed - 1) / 2147483646;
-  };
-  return Array.from({ length: 28 }, () => ({
-    x: random(),
-    y: random(),
-    scatterX: random() * 2 - 1,
-    scatterY: random() * 2 - 1,
-    size: .35 + random() * 1.35,
-    length: .5 + random() * 4,
-    angle: random() * Math.PI * 2,
-    reveal: random()
-  }));
-}
-
-function resizeScatter() {
-  pixelRatio = Math.min(devicePixelRatio || 1, 2);
-  scatter.width = Math.round(innerWidth * pixelRatio);
-  scatter.height = Math.round(innerHeight * pixelRatio);
-  scatter.style.width = `${innerWidth}px`;
-  scatter.style.height = `${innerHeight}px`;
-  scatterContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-}
 
 function updateTexture() {
   const now = performance.now();
-  scatterContext.clearRect(0, 0, innerWidth, innerHeight);
-
-  for (const letter of stream.querySelectorAll(".letter[data-born]")) {
-    const age = Math.min((now - Number(letter.dataset.born)) / 7000, 1);
-    const insideTexture = Math.min(age * 2, 1) * (1 - age);
-    letter.style.setProperty("--solid-level", (1 - age).toFixed(2));
-    letter.style.setProperty("--inside-texture", insideTexture.toFixed(2));
-    if (age < .08) continue;
-
-    const rect = letter.getBoundingClientRect();
-    const flecks = letterFlecks.get(letter) || [];
-    const spread = maximumScatter * age;
-    scatterContext.fillStyle = `rgba(12, 12, 14, ${Math.min(.82, age * .88)})`;
-    scatterContext.strokeStyle = `rgba(12, 12, 14, ${Math.min(.72, age * .76)})`;
-
-    for (const fleck of flecks) {
-      if (age < fleck.reveal) continue;
-      const x = rect.left + fleck.x * rect.width + fleck.scatterX * spread;
-      const y = rect.top + fleck.y * rect.height + fleck.scatterY * spread;
-      if (fleck.length < 1.3) {
-        scatterContext.fillRect(x, y, fleck.size, fleck.size);
-      } else {
-        scatterContext.lineWidth = fleck.size;
-        scatterContext.beginPath();
-        scatterContext.moveTo(x, y);
-        scatterContext.lineTo(x + Math.cos(fleck.angle) * fleck.length, y + Math.sin(fleck.angle) * fleck.length);
-        scatterContext.stroke();
-      }
-    }
+  for (const line of stream.querySelectorAll(".note-line[data-born]")) {
+    const age = Math.min((now - Number(line.dataset.born)) / 7000, 1);
+    const map = displacementMaps.get(line);
+    map.setAttribute("scale", (maximumDisplacement * age).toFixed(2));
   }
 }
+
+function createLineFilter(line) {
+  const id = `texture-line-${createLineFilter.nextId++}`;
+  const filter = document.createElementNS(svgNamespace, "filter");
+  filter.setAttribute("id", id);
+  filter.setAttribute("x", "-50%");
+  filter.setAttribute("y", "-100%");
+  filter.setAttribute("width", "200%");
+  filter.setAttribute("height", "300%");
+  filter.setAttribute("filterUnits", "objectBoundingBox");
+  filter.setAttribute("color-interpolation-filters", "sRGB");
+
+  const turbulence = document.createElementNS(svgNamespace, "feTurbulence");
+  turbulence.setAttribute("type", "fractalNoise");
+  turbulence.setAttribute("baseFrequency", "0.25 0.25");
+  turbulence.setAttribute("numOctaves", "3");
+  turbulence.setAttribute("seed", "2718");
+  turbulence.setAttribute("result", "texture-noise");
+
+  const displacement = document.createElementNS(svgNamespace, "feDisplacementMap");
+  displacement.setAttribute("in", "SourceGraphic");
+  displacement.setAttribute("in2", "texture-noise");
+  displacement.setAttribute("scale", "0");
+  displacement.setAttribute("xChannelSelector", "R");
+  displacement.setAttribute("yChannelSelector", "G");
+
+  filter.append(turbulence, displacement);
+  textureFilters.append(filter);
+  line.dataset.filterId = id;
+  line.dataset.born = performance.now();
+  line.style.filter = `url(#${id})`;
+  displacementMaps.set(line, displacement);
+}
+
+createLineFilter.nextId = 0;
 
 function wordsPerLine(note) {
   const words = note.trim().split(/\s+/);
@@ -115,13 +97,18 @@ function wordsPerLine(note) {
 
 function keepLatestRows() {
   stream.scrollTop = stream.scrollHeight;
-  while (stream.childElementCount > maxRows) stream.firstElementChild.remove();
+  while (stream.childElementCount > maxRows) {
+    const oldest = stream.firstElementChild;
+    textureFilters.querySelector(`#${oldest.dataset.filterId}`)?.remove();
+    oldest.remove();
+  }
   stream.scrollTop = stream.scrollHeight;
 }
 
-function addLine(text) {
+function addLine() {
   const line = document.createElement("div");
   line.className = "note-line";
+  createLineFilter(line);
   stream.append(line);
   keepLatestRows();
   return line;
@@ -136,11 +123,6 @@ function appendLetters(line, text) {
     const letter = document.createElement("span");
     letter.className = "letter";
     letter.textContent = character;
-    letter.dataset.letter = character;
-    letter.dataset.born = performance.now();
-    letter.style.setProperty("--grain-x", `${Math.random() * 128}px`);
-    letter.style.setProperty("--grain-y", `${Math.random() * 128}px`);
-    letterFlecks.set(letter, makeFlecks(letter));
     line.append(letter);
   }
 }
@@ -150,7 +132,7 @@ function wait(ms) {
 }
 
 async function writeLine(text) {
-  const line = addLine(text);
+  const line = addLine();
   for (const character of text) {
     appendLetters(line, character);
     keepLatestRows();
@@ -163,7 +145,7 @@ async function writeNote(note) {
   const lines = wordsPerLine(note);
   for (const line of lines) await writeLine(line);
 
-  const ornament = addLine("⚜");
+  const ornament = addLine();
   ornament.classList.add("passage-break");
   ornament.append(document.createTextNode("⚜"));
   keepLatestRows();
@@ -182,17 +164,15 @@ async function run() {
 if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
   const staticText = notes.slice(0, maxRows - 1);
   for (const note of staticText) {
-    const line = addLine(note);
+    const line = addLine();
     appendLetters(line, note);
   }
-  const ornament = addLine("⚜");
+  const ornament = addLine();
   ornament.classList.add("passage-break");
   ornament.textContent = "⚜";
 } else {
   run();
 }
 
-resizeScatter();
 updateTexture();
-addEventListener("resize", resizeScatter);
-setInterval(updateTexture, 50);
+setInterval(updateTexture, 100);
