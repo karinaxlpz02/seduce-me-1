@@ -30,6 +30,9 @@ let listening = false;
 let processing = false;
 let utteranceNumber = 0;
 const utteranceQueue = [];
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition;
+let liveTranscriptBase = "";
 
 function createWhisper() {
   return new BrowserWhisper({ model: modelName, quantization: "hybrid" });
@@ -98,7 +101,7 @@ async function loadArchive() {
       page = result.meta?.next_page || null;
     }
     renderArchive(items);
-    connectionNote.textContent = `On-device Whisper transcription · ${modelName} downloads the first time you record (${modelSize}).`;
+    connectionNote.textContent = `Live speech recognition in supported browsers · on-device Whisper fallback (${modelName}, ${modelSize}).`;
   } catch {
     renderArchive(fallbackNotes.map((text, index) => ({ text, author: "notes on desire", id: `local-${index}` })));
     connectionNote.textContent = "Showing the saved notes preview. The full Are.na archive could not be reached.";
@@ -162,6 +165,49 @@ async function startRecording() {
   startButton.disabled = true;
   shareMessage.textContent = "";
   try {
+    if (SpeechRecognition) {
+      if (!recognition) {
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = document.documentElement.lang || "en-US";
+        recognition.onresult = event => {
+          const finalParts = [];
+          const interimParts = [];
+          for (let index = 0; index < event.results.length; index += 1) {
+            const part = event.results[index][0]?.transcript?.trim();
+            if (!part) continue;
+            (event.results[index].isFinal ? finalParts : interimParts).push(part);
+          }
+          const finalText = finalParts.join(" ");
+          const interimText = interimParts.join(" ");
+          transcript.value = [liveTranscriptBase, finalText, interimText].filter(Boolean).join(" ");
+          copyButton.disabled = !transcript.value.trim();
+          if (interimText) setStatus("Listening · words appear as you speak", true);
+          else if (finalText) shareMessage.textContent = "Your words are appearing live. You can edit or copy them.";
+        };
+        recognition.onerror = event => {
+          if (event.error !== "aborted" && event.error !== "no-speech") {
+            setStatus(`Live transcription error: ${event.error}. Try again or use a supported browser.`);
+          }
+        };
+        recognition.onend = () => {
+          if (!listening) return;
+          try {
+            recognition.start();
+          } catch {
+            setStatus("Listening · words appear as you speak", true);
+          }
+        };
+      }
+      liveTranscriptBase = transcript.value.trim();
+      listening = true;
+      recognition.start();
+      startButton.disabled = true;
+      stopButton.disabled = false;
+      setStatus("Listening · words appear as you speak", true);
+      return;
+    }
     if (!prepared && !(await prepareModel())) return;
     if (!micVAD) {
       micVAD = await window.vad.MicVAD.new({
@@ -220,11 +266,13 @@ async function processUtterances() {
 }
 
 function stopRecording() {
+  if (recognition && listening) recognition.stop();
   micVAD?.pause();
   listening = false;
   startButton.disabled = false;
   stopButton.disabled = true;
   setStatus("Recording finished. Your transcript is ready.");
+  if (transcript.value.trim()) copyButton.disabled = false;
   void processUtterances();
 }
 

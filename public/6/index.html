@@ -24,7 +24,7 @@
         <a class="wordmark" href="#top" aria-label="Back to top">desire lines</a>
         <p><span id="archive-count">—</span> notes gathered from <a href="https://www.are.na/karina-lopez/notes-on-are-na-about-desire" target="_blank" rel="noreferrer">Are.na</a></p>
       </header>
-      <p class="connection-note" id="connection-note" role="status">The Are.na archive loads publicly. Speech is transcribed on this device.</p>
+      <p class="connection-note" id="connection-note" role="status">The Are.na archive loads publicly. Live transcription is available in supported browsers.</p>
       <div id="archive" class="archive" aria-live="polite" aria-busy="true"></div>
       <footer class="bottom-bar">
         <span class="now-speaking" id="now-speaking" aria-live="polite">choose a line to hear it</span>
@@ -42,17 +42,17 @@
       <form method="dialog"><button class="close-dialog" aria-label="Close">×</button></form>
       <p class="eyebrow">a small spoken note</p>
       <h1 id="share-title">share a desire</h1>
-      <p class="share-instructions">Say anything you want to leave here. Whisper will transcribe your speech on this device; pause between thoughts to see each line appear.</p>
+      <p class="share-instructions">Say anything you want to leave here. In supported browsers, words appear as you say them. If live recognition isn’t available, on-device Whisper transcribes after each pause.</p>
       <div class="record-status" id="record-status" aria-live="polite">Your microphone is off.</div>
       <div class="record-actions">
         <button class="record-button" id="record-start" type="button"><span aria-hidden="true">●</span> start speaking</button>
         <button class="record-button secondary" id="record-stop" type="button" disabled>finish recording</button>
       </div>
-      <label class="transcript-label" for="transcript">your words <span>transcribed locally as you speak</span></label>
-      <textarea id="transcript" rows="5" placeholder="Your words will appear here after each pause…"></textarea>
+      <label class="transcript-label" for="transcript">your words <span>live text · editable</span></label>
+      <textarea id="transcript" rows="5" placeholder="Your words will appear here as you speak…"></textarea>
       <button class="publish-button" id="publish" type="button" disabled>copy transcript <span aria-hidden="true">⧉</span></button>
       <p class="share-message" id="share-message" role="status"></p>
-      <p class="privacy-note">Audio is transcribed on this device and isn’t uploaded. The first use downloads Whisper Tiny (about 120 MB); model files are cached in your browser. Nothing is sent to Are.na.</p>
+      <p class="privacy-note">Live recognition uses your browser’s speech service, which may process audio outside this device. When live recognition isn’t supported, Whisper transcribes on-device after a pause and downloads its model the first time (about 120 MB). Nothing is sent to Are.na.</p>
     </dialog>
   </main>
   <script type="module" src="assets-build/app.js?v=3"></script>
