@@ -20,12 +20,6 @@ Vocabulary also includes eros, tension, time, memory, belonging, and other human
 
 ## /6 Desire Lines
 
-The `/6/` page opens with “desire lines / click to enter,” then loads text blocks from the Are.na channel `notes-on-are-na-about-desire`. Selecting a block reads it aloud with the browser’s speech synthesis. Visitors can choose an installed system voice and adjust the pace. “Share a desire” starts microphone recording; the browser sends six-second audio segments to the companion API for incremental Whishper transcription. Visitors can review and edit the transcript before adding it to the Are.na channel.
+The `/6/` page opens with “desire lines / click to enter,” then loads the 81 text blocks from the public Are.na channel `notes-on-are-na-about-desire`. Selecting a block reads it aloud with the browser’s speech synthesis; visitors can choose a system voice and adjust the pace.
 
-### Desire API setup
-
-GitHub Pages serves static files and cannot safely keep an Are.na write token or transcribe recordings on its own. Deploy `desire-api.mjs` as a small HTTPS Node service, set the environment variables below from `.env.example`, and give it access to a running Whishper transcription API. Create a personal Are.na access token with write access and keep it only in the API host’s environment; never put it in `public/`.
-
-Set `ARENA_CHANNEL` to the channel’s API ID or slug, `ARENA_ACCESS_TOKEN` to the write token, and `WHISHPER_TRANSCRIBE_URL` to Whishper’s `/transcribe/` endpoint. Set `DESIRE_ALLOWED_ORIGINS` to the public site origin and any local development origin. Then set `API_BASE` in `public/6/api-config.js` to the API service origin and deploy the updated `public/` directory. Both the public page and API need HTTPS for browser microphone access and cross-origin requests.
-
-The browser sends standalone audio segments during recording, so transcription appears incrementally rather than as a live word-by-word stream. Only the edited final text is sent to Are.na; this companion API does not retain the audio. Whishper’s own storage behavior depends on its server setup. The API applies simple in-memory per-IP rate limits, which reset when its process restarts.
+“Share a desire” opens a local microphone transcriber powered by the MIT-licensed [browser-whisper](https://github.com/tanpreetjolly/browser-whisper) library. Whisper processes each spoken phrase on the device and shows text in the transcript field; nothing is posted to Are.na. The first recording downloads the Whisper Tiny model (about 120 MB), then keeps it in the browser cache. `npm run build:speech` bundles the transcriber for the Pages workflow. The original library license is included at `public/6/licenses/browser-whisper-MIT.txt`.

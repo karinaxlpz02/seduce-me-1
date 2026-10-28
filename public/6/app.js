@@ -1,8 +1,11 @@
+import { BrowserWhisper } from "browser-whisper";
 import { notes as fallbackNotes } from "./notes.js";
-import { API_BASE } from "./api-config.js";
 
-const api = path => `${API_BASE.replace(/\/$/, "")}/api/desire${path}`;
-
+const channelUrl = "https://api.are.na/v3/channels/notes-on-are-na-about-desire/contents";
+const modelName = "whisper-tiny";
+const modelSize = "about 120 MB";
+const ortVersion = "1.22.0";
+const vadVersion = "0.0.30";
 const intro = document.querySelector("#intro");
 const archiveView = document.querySelector("#archive-view");
 const archive = document.querySelector("#archive");
@@ -14,23 +17,27 @@ const transcript = document.querySelector("#transcript");
 const shareMessage = document.querySelector("#share-message");
 const startButton = document.querySelector("#record-start");
 const stopButton = document.querySelector("#record-stop");
-const publishButton = document.querySelector("#publish");
+const copyButton = document.querySelector("#publish");
 const voiceSelect = document.querySelector("#voice-select");
 const rateControl = document.querySelector("#rate");
 const nowSpeaking = document.querySelector("#now-speaking");
 
 let archiveItems = [];
-let mediaRecorder;
-let microphone;
-let transcriptionQueue = Promise.resolve();
-let isRecording = false;
-let segmentTimer;
-let transcriptionAvailable = false;
-let voiceStatusMessage = "The voice archive service isn’t connected to this page yet.";
+let whisper = createWhisper();
+let micVAD;
+let prepared = false;
+let listening = false;
+let processing = false;
+let utteranceNumber = 0;
+const utteranceQueue = [];
 
-function setStatus(message, recording = false) {
+function createWhisper() {
+  return new BrowserWhisper({ model: modelName, quantization: "hybrid" });
+}
+
+function setStatus(message, speaking = false) {
   status.textContent = message;
-  status.classList.toggle("is-recording", recording);
+  status.classList.toggle("is-recording", speaking);
 }
 
 function textFor(item) {
@@ -56,9 +63,8 @@ function renderArchive(items) {
     content.textContent = text;
     const meta = document.createElement("span");
     meta.className = "card-meta";
-    const author = item.user?.name || item.author || "desire archive";
     const byline = document.createElement("span");
-    byline.textContent = author;
+    byline.textContent = item.user?.name || item.author || "notes on desire";
     const listen = document.createElement("span");
     listen.className = "listen-icon";
     listen.setAttribute("aria-hidden", "true");
@@ -75,39 +81,27 @@ function renderArchive(items) {
 
 async function loadArchive() {
   try {
-    const response = await fetch(api("/archive"));
-    if (!response.ok) throw new Error("Archive service unavailable");
-    const data = await response.json();
-    renderArchive(data.items || []);
+    const items = [];
+    let page = 1;
+    while (page && page <= 10) {
+      const url = new URL(channelUrl);
+      url.searchParams.set("per", "100");
+      url.searchParams.set("page", String(page));
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Are.na returned ${response.status}`);
+      const result = await response.json();
+      for (const block of result.data || []) {
+        if (block.type !== "Text") continue;
+        const text = block.content?.plain || block.content?.markdown || "";
+        if (text.trim()) items.push({ id: block.id, text, author: block.user?.name || "notes on desire", user: block.user });
+      }
+      page = result.meta?.next_page || null;
+    }
+    renderArchive(items);
+    connectionNote.textContent = `On-device Whisper transcription · ${modelName} downloads the first time you record (${modelSize}).`;
   } catch {
     renderArchive(fallbackNotes.map((text, index) => ({ text, author: "notes on desire", id: `local-${index}` })));
-    const hint = document.createElement("p");
-    hint.className = "empty-state";
-    hint.textContent = "Showing a small preview. Connect the archive service to load all Are.na notes and share new ones.";
-    archive.append(hint);
-  }
-}
-
-async function loadVoiceStatus() {
-  try {
-    const response = await fetch(api("/status"));
-    if (!response.ok) throw new Error("Voice service status unavailable");
-    const result = await response.json();
-    transcriptionAvailable = Boolean(result.transcription);
-    if (!transcriptionAvailable) {
-      voiceStatusMessage = "Voice transcription isn’t connected yet. The archive service needs a Whishper endpoint.";
-      connectionNote.textContent = voiceStatusMessage;
-    } else if (!result.sharing) {
-      voiceStatusMessage = "Whishper is connected, but Are.na write access isn’t configured yet.";
-      connectionNote.textContent = voiceStatusMessage;
-    } else {
-      voiceStatusMessage = "Voice transcription and sharing are connected. Speak a desire to add it to the archive.";
-      connectionNote.textContent = voiceStatusMessage;
-    }
-  } catch {
-    transcriptionAvailable = false;
-    voiceStatusMessage = "Voice transcription isn’t available: the archive API has not been deployed or connected to this page.";
-    connectionNote.textContent = voiceStatusMessage;
+    connectionNote.textContent = "Showing the saved notes preview. The full Are.na archive could not be reached.";
   }
 }
 
@@ -115,10 +109,7 @@ function loadVoices() {
   const voices = speechSynthesis.getVoices();
   const selected = voiceSelect.value;
   voiceSelect.replaceChildren(new Option("System voice", ""));
-  voices.forEach((voice, index) => {
-    const option = new Option(`${voice.name} · ${voice.lang}`, String(index));
-    voiceSelect.add(option);
-  });
+  voices.forEach((voice, index) => voiceSelect.add(new Option(`${voice.name} · ${voice.lang}`, String(index))));
   if (selected) voiceSelect.value = selected;
 }
 
@@ -132,9 +123,7 @@ function speak(text, card) {
   card.setAttribute("aria-pressed", "true");
   const utterance = new SpeechSynthesisUtterance(text);
   const voiceIndex = Number(voiceSelect.value);
-  if (voiceSelect.value && speechSynthesis.getVoices()[voiceIndex]) {
-    utterance.voice = speechSynthesis.getVoices()[voiceIndex];
-  }
+  if (voiceSelect.value && speechSynthesis.getVoices()[voiceIndex]) utterance.voice = speechSynthesis.getVoices()[voiceIndex];
   utterance.rate = Number(rateControl.value);
   nowSpeaking.textContent = `speaking · ${text}`;
   utterance.onend = () => {
@@ -144,114 +133,110 @@ function speak(text, card) {
   speechSynthesis.speak(utterance);
 }
 
-function resetRecorder() {
-  clearTimeout(segmentTimer);
-  isRecording = false;
-  mediaRecorder = undefined;
-  microphone?.getTracks().forEach(track => track.stop());
-  microphone = undefined;
-  startButton.disabled = false;
-  stopButton.disabled = true;
-}
-
-async function transcribeChunk(blob) {
-  if (blob.size < 600) return;
-  const form = new FormData();
-  const extension = blob.type.includes("mp4") ? "mp4" : "webm";
-  form.append("file", blob, `desire-${Date.now()}.${extension}`);
-  const response = await fetch(api("/transcribe"), { method: "POST", body: form });
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || "Whishper could not transcribe this recording.");
-  const words = String(data.text || "").trim();
-  if (words) {
-    transcript.value = `${transcript.value.trim()}${transcript.value.trim() ? " " : ""}${words}`;
-    publishButton.disabled = false;
-    setStatus("Listening · words are arriving as Whishper transcribes each segment", true);
-  }
-}
-
-function beginRecordingSegment() {
-  const mimeType = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"].find(type => MediaRecorder.isTypeSupported(type));
-  const recorder = mimeType ? new MediaRecorder(microphone, { mimeType }) : new MediaRecorder(microphone);
-  mediaRecorder = recorder;
-  recorder.addEventListener("dataavailable", event => {
-    if (!event.data.size) return;
-    transcriptionQueue = transcriptionQueue.then(() => transcribeChunk(event.data)).catch(error => {
-      setStatus(error.message, isRecording);
+async function prepareModel() {
+  setStatus(`Downloading ${modelName} model (${modelSize})…`);
+  startButton.disabled = true;
+  try {
+    await whisper.downloadModel({
+      model: modelName,
+      quantization: "hybrid",
+      onProgress: event => {
+        if (event.stage === "loading") setStatus(`Preparing ${modelName} · ${Math.round(event.progress * 100)}%`);
+      }
     });
-  });
-  recorder.addEventListener("error", () => setStatus("The recording stopped unexpectedly."));
-  recorder.addEventListener("stop", async () => {
-    if (isRecording) {
-      beginRecordingSegment();
-      return;
-    }
-    await transcriptionQueue;
-    resetRecorder();
-    setStatus(transcript.value.trim() ? "Recording finished. Review the words, then add them to the archive." : "No words were recognized. You can try recording again.");
-    publishButton.disabled = !transcript.value.trim();
-  }, { once: true });
-  recorder.start();
-  segmentTimer = setTimeout(() => {
-    if (recorder.state === "recording") recorder.stop();
-  }, 6000);
+    prepared = true;
+    setStatus("Whisper is ready. Starting your microphone…");
+    return true;
+  } catch (error) {
+    setStatus(error instanceof Error ? error.message : "The Whisper model could not be prepared.");
+    startButton.disabled = false;
+    return false;
+  }
 }
 
 async function startRecording() {
-  if (!transcriptionAvailable) {
-    setStatus(voiceStatusMessage);
+  if (!navigator.mediaDevices?.getUserMedia || !window.vad?.MicVAD) {
+    setStatus("Microphone transcription is unavailable in this browser.");
     return;
   }
-  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
-    setStatus("This browser can’t record audio. Try a current version of Chrome, Safari, or Firefox.");
-    return;
-  }
+  startButton.disabled = true;
+  shareMessage.textContent = "";
   try {
-    microphone = await navigator.mediaDevices.getUserMedia({ audio: true });
-    isRecording = true;
+    if (!prepared && !(await prepareModel())) return;
+    if (!micVAD) {
+      micVAD = await window.vad.MicVAD.new({
+        onSpeechStart: () => setStatus("Listening · speak and pause to see each phrase", true),
+        onSpeechEnd: handleSpeechEnd,
+        onnxWASMBasePath: `https://cdn.jsdelivr.net/npm/onnxruntime-web@${ortVersion}/dist/`,
+        baseAssetPath: `https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@${vadVersion}/dist/`,
+        model: "v5",
+        positiveSpeechThreshold: .35,
+        negativeSpeechThreshold: .2,
+        redemptionMs: 300,
+        preSpeechPadMs: 160,
+        minSpeechMs: 120
+      });
+    }
+    micVAD.start();
+    listening = true;
     startButton.disabled = true;
     stopButton.disabled = false;
-    publishButton.disabled = true;
-    transcript.value = "";
-    shareMessage.textContent = "";
-    transcriptionQueue = Promise.resolve();
-    beginRecordingSegment();
-    setStatus("Listening · transcription updates every few seconds", true);
+    setStatus("Listening · pause between phrases to see the transcript", true);
   } catch (error) {
-    resetRecorder();
-    setStatus(error.name === "NotAllowedError" ? "Microphone access was not allowed." : "Could not start the microphone. Check your browser permissions.");
+    listening = false;
+    startButton.disabled = false;
+    stopButton.disabled = true;
+    setStatus(error instanceof Error ? error.message : "Could not start the microphone.");
+  }
+}
+
+function handleSpeechEnd(audio) {
+  utteranceQueue.push({ id: ++utteranceNumber, audio });
+  if (listening) setStatus("Listening · transcribing your last phrase…", true);
+  void processUtterances();
+}
+
+async function processUtterances() {
+  if (processing) return;
+  processing = true;
+  try {
+    while (utteranceQueue.length) {
+      const item = utteranceQueue.shift();
+      if (!item) continue;
+      const segments = await whisper.transcribePCM(item.audio).collect();
+      const text = segments.map(segment => segment.text.trim()).filter(Boolean).join(" ").trim();
+      if (text) {
+        transcript.value = `${transcript.value.trim()}${transcript.value.trim() ? " " : ""}${text}`;
+        copyButton.disabled = false;
+        shareMessage.textContent = "Your words are transcribed on this device.";
+      }
+      setStatus(listening ? "Listening · pause between phrases to see the transcript" : "Recording finished. Your transcript is ready.", listening);
+    }
+  } catch (error) {
+    setStatus(error instanceof Error ? error.message : "Could not transcribe that phrase.", listening);
+  } finally {
+    processing = false;
   }
 }
 
 function stopRecording() {
-  if (mediaRecorder?.state === "recording") {
-    isRecording = false;
-    clearTimeout(segmentTimer);
-    setStatus("Finishing the last transcription segment…");
-    mediaRecorder.stop();
-  }
+  micVAD?.pause();
+  listening = false;
+  startButton.disabled = false;
+  stopButton.disabled = true;
+  setStatus("Recording finished. Your transcript is ready.");
+  void processUtterances();
 }
 
-async function publishDesire() {
-  const text = transcript.value.trim();
-  if (!text) return;
-  publishButton.disabled = true;
-  shareMessage.textContent = "Adding your words to the archive…";
+async function copyTranscript() {
+  if (!transcript.value.trim()) return;
   try {
-    const response = await fetch(api("/share"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "Could not add the note to Are.na.");
-    const newItem = data.item || { text, author: "community" };
-    renderArchive([newItem, ...archiveItems]);
-    shareMessage.textContent = "Your desire is in the archive. Thank you for leaving it here.";
-    setTimeout(() => shareDialog.close(), 1300);
-  } catch (error) {
-    publishButton.disabled = false;
-    shareMessage.textContent = error.message;
+    await navigator.clipboard.writeText(transcript.value.trim());
+    shareMessage.textContent = "Copied to clipboard. It has not been sent to Are.na.";
+  } catch {
+    transcript.focus();
+    transcript.select();
+    shareMessage.textContent = "Select and copy your transcript. It has not been sent to Are.na.";
   }
 }
 
@@ -259,19 +244,18 @@ document.querySelector("#enter").addEventListener("click", () => {
   intro.hidden = true;
   archiveView.hidden = false;
   loadArchive();
-  loadVoiceStatus();
 });
 document.querySelector("#share-trigger").addEventListener("click", () => shareDialog.showModal());
-document.querySelector("#record-start").addEventListener("click", startRecording);
-document.querySelector("#record-stop").addEventListener("click", stopRecording);
-publishButton.addEventListener("click", publishDesire);
-transcript.addEventListener("input", () => { publishButton.disabled = isRecording || !transcript.value.trim(); });
-voiceSelect.addEventListener("change", () => {
-  if ("speechSynthesis" in window) speechSynthesis.cancel();
-});
+startButton.addEventListener("click", startRecording);
+stopButton.addEventListener("click", stopRecording);
+copyButton.addEventListener("click", copyTranscript);
+voiceSelect.addEventListener("change", () => speechSynthesis.cancel());
 shareDialog.addEventListener("close", () => {
-  if (mediaRecorder?.state === "recording") stopRecording();
-  microphone?.getTracks().forEach(track => track.stop());
+  if (listening) stopRecording();
+});
+window.addEventListener("beforeunload", () => {
+  micVAD?.destroy?.();
+  whisper.dispose();
 });
 if ("speechSynthesis" in window) {
   loadVoices();

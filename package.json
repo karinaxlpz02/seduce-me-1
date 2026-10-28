@@ -1,1 +1,1 @@
-{"name":"seduce-me-1","private":true,"type":"module","scripts":{"start":"node --env-file-if-exists=.env server.mjs","start:desire-api":"node --env-file-if-exists=.env desire-api.mjs","test":"node --test"},"engines":{"node":">=22"}}
+{"name":"seduce-me-1","private":true,"type":"module","scripts":{"start":"node --env-file-if-exists=.env server.mjs","build:speech":"vite build --config vite.speech.config.js","test":"node --test"},"engines":{"node":">=22"},"dependencies":{"browser-whisper":"2.0.0"},"devDependencies":{"vite":"^7.3.1"}}

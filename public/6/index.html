@@ -6,6 +6,8 @@
   <meta name="theme-color" content="#f4effd">
   <title>desire lines</title>
   <link rel="stylesheet" href="style.css?v=2">
+  <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.30/dist/bundle.min.js"></script>
 </head>
 <body>
   <main>
@@ -22,7 +24,7 @@
         <a class="wordmark" href="#top" aria-label="Back to top">desire lines</a>
         <p><span id="archive-count">—</span> notes gathered from <a href="https://www.are.na/karina-lopez/notes-on-are-na-about-desire" target="_blank" rel="noreferrer">Are.na</a></p>
       </header>
-      <p class="connection-note" id="connection-note" role="status">Checking the voice archive connection…</p>
+      <p class="connection-note" id="connection-note" role="status">The Are.na archive loads publicly. Speech is transcribed on this device.</p>
       <div id="archive" class="archive" aria-live="polite" aria-busy="true"></div>
       <footer class="bottom-bar">
         <span class="now-speaking" id="now-speaking" aria-live="polite">choose a line to hear it</span>
@@ -38,21 +40,21 @@
 
     <dialog id="share-dialog" class="share-dialog" aria-labelledby="share-title">
       <form method="dialog"><button class="close-dialog" aria-label="Close">×</button></form>
-      <p class="eyebrow">add your voice to the archive</p>
+      <p class="eyebrow">a small spoken note</p>
       <h1 id="share-title">share a desire</h1>
-      <p class="share-instructions">Say anything you want to leave here. Your recording is transcribed with Whishper, then added to the public Are.na channel.</p>
+      <p class="share-instructions">Say anything you want to leave here. Whisper will transcribe your speech on this device; pause between thoughts to see each line appear.</p>
       <div class="record-status" id="record-status" aria-live="polite">Your microphone is off.</div>
       <div class="record-actions">
         <button class="record-button" id="record-start" type="button"><span aria-hidden="true">●</span> start speaking</button>
         <button class="record-button secondary" id="record-stop" type="button" disabled>finish recording</button>
       </div>
-      <label class="transcript-label" for="transcript">your words <span>you can edit the transcript before sharing</span></label>
-      <textarea id="transcript" rows="4" maxlength="2000" placeholder="Your words will appear here as you speak…"></textarea>
-      <button class="publish-button" id="publish" type="button" disabled>add to the archive <span aria-hidden="true">↗</span></button>
+      <label class="transcript-label" for="transcript">your words <span>transcribed locally as you speak</span></label>
+      <textarea id="transcript" rows="5" placeholder="Your words will appear here after each pause…"></textarea>
+      <button class="publish-button" id="publish" type="button" disabled>copy transcript <span aria-hidden="true">⧉</span></button>
       <p class="share-message" id="share-message" role="status"></p>
-      <p class="privacy-note">Audio is sent to the archive owner’s Whishper server for transcription. Only the final text is saved to Are.na.</p>
+      <p class="privacy-note">Audio is transcribed on this device and isn’t uploaded. The first use downloads Whisper Tiny (about 120 MB); model files are cached in your browser. Nothing is sent to Are.na.</p>
     </dialog>
   </main>
-  <script type="module" src="app.js?v=2"></script>
+  <script type="module" src="assets-build/app.js?v=3"></script>
 </body>
 </html>
