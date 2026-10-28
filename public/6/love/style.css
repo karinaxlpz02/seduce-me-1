@@ -1,0 +1,60 @@
+@font-face {
+  font-family: "Serifbabe SIGMA Test";
+  src: url("../../3/fonts/SerifbabeSIGMATest-Regular.otf") format("opentype");
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+  color: #111;
+  font-family: "Serifbabe SIGMA Test", Georgia, serif;
+  background: linear-gradient(180deg, #F4EFFD 0%, #EDF4EF 30%, #FBFCFC 50%, #EDF4EF 70%, #F4EFFD 100%);
+}
+
+* { box-sizing: border-box; }
+html, body { width: 100%; min-height: 100%; margin: 0; }
+body { min-height: 100svh; overflow: hidden; }
+
+#love-screen {
+  position: relative;
+  width: 100%;
+  height: 100svh;
+  overflow: hidden;
+  padding: 2.5vw;
+}
+
+#love-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: clamp(4rem, 18vw, 25rem);
+  line-height: .9;
+  letter-spacing: -.09em;
+}
+
+.love-letter { display: inline-block; animation: arrive 100ms cubic-bezier(.16, .7, .25, 1) both; }
+
+.back-link {
+  position: absolute;
+  z-index: 2;
+  top: .3em;
+  right: .55em;
+  color: inherit;
+  font-size: 2rem;
+  text-decoration: none;
+}
+
+@keyframes arrive { from { opacity: 0; transform: translateY(.18em) scale(.94); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+@media (max-width: 600px) {
+  #love-screen { padding: 6vw; }
+  #love-note { font-size: clamp(3rem, 22vw, 10rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .love-letter { animation-duration: 1ms; }
+}

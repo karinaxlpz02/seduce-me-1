@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#f4effd">
+  <title>desire lines</title>
+  <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body>
+  <main>
+    <section id="intro" class="intro" aria-labelledby="intro-title">
+      <button class="enter" id="enter" type="button" aria-label="Enter desire lines archive">
+        <span id="intro-title">desire lines</span>
+        <span class="enter-hint">click to enter <span aria-hidden="true">↘</span></span>
+      </button>
+      <p class="intro-note">a living archive of wanting, remembering, becoming</p>
+    </section>
+
+    <section id="archive-view" class="archive-view" aria-label="Desire archive" hidden>
+      <header class="archive-header">
+        <a class="wordmark" href="#top" aria-label="Back to top">desire lines</a>
+        <p><span id="archive-count">—</span> notes gathered from <a href="https://www.are.na/karina-lopez/notes-on-are-na-about-desire" target="_blank" rel="noreferrer">Are.na</a></p>
+      </header>
+      <div id="archive" class="archive" aria-live="polite" aria-busy="true"></div>
+      <footer class="bottom-bar">
+        <span class="now-speaking" id="now-speaking" aria-live="polite">choose a line to hear it</span>
+        <div class="voice-controls">
+          <label for="voice-select">voice</label>
+          <select id="voice-select" aria-label="Spoken voice"><option value="">System voice</option></select>
+          <label for="rate">pace</label>
+          <input id="rate" type="range" min="0.65" max="1.3" step="0.05" value="0.9" aria-label="Speaking pace">
+        </div>
+        <button class="share-trigger" id="share-trigger" type="button">share a desire <span aria-hidden="true">＋</span></button>
+      </footer>
+    </section>
+
+    <dialog id="share-dialog" class="share-dialog" aria-labelledby="share-title">
+      <form method="dialog"><button class="close-dialog" aria-label="Close">×</button></form>
+      <p class="eyebrow">add your voice to the archive</p>
+      <h1 id="share-title">share a desire</h1>
+      <p class="share-instructions">Say anything you want to leave here. Your recording is transcribed with Whishper, then added to the public Are.na channel.</p>
+      <div class="record-status" id="record-status" aria-live="polite">Your microphone is off.</div>
+      <div class="record-actions">
+        <button class="record-button" id="record-start" type="button"><span aria-hidden="true">●</span> start speaking</button>
+        <button class="record-button secondary" id="record-stop" type="button" disabled>finish recording</button>
+      </div>
+      <label class="transcript-label" for="transcript">your words <span>you can edit the transcript before sharing</span></label>
+      <textarea id="transcript" rows="4" maxlength="2000" placeholder="Your words will appear here as you speak…"></textarea>
+      <button class="publish-button" id="publish" type="button" disabled>add to the archive <span aria-hidden="true">↗</span></button>
+      <p class="share-message" id="share-message" role="status"></p>
+      <p class="privacy-note">Audio is sent to the archive owner’s Whishper server for transcription. Only the final text is saved to Are.na.</p>
+    </dialog>
+  </main>
+  <script type="module" src="app.js?v=2"></script>
+</body>
+</html>
