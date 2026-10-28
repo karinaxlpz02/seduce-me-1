@@ -67,6 +67,10 @@ const server = http.createServer(async (req, res) => {
 
   const path = new URL(req.url, "http://localhost").pathname;
   try {
+    if (path === "/api/desire/status" && req.method === "GET") {
+      return send(res, 200, { available: true, transcription: Boolean(whishperUrl), sharing: Boolean(arenaToken) });
+    }
+
     if (path === "/api/desire/archive" && req.method === "GET") {
       if (!rateLimit(req, "archive", 90, 60 * 60 * 1000)) return send(res, 429, { error: "Please wait a little before loading the archive again." });
       return send(res, 200, { items: await fetchArchive() });

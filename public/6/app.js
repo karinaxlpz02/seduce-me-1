@@ -7,6 +7,7 @@ const intro = document.querySelector("#intro");
 const archiveView = document.querySelector("#archive-view");
 const archive = document.querySelector("#archive");
 const archiveCount = document.querySelector("#archive-count");
+const connectionNote = document.querySelector("#connection-note");
 const shareDialog = document.querySelector("#share-dialog");
 const status = document.querySelector("#record-status");
 const transcript = document.querySelector("#transcript");
@@ -24,6 +25,8 @@ let microphone;
 let transcriptionQueue = Promise.resolve();
 let isRecording = false;
 let segmentTimer;
+let transcriptionAvailable = false;
+let voiceStatusMessage = "The voice archive service isn’t connected to this page yet.";
 
 function setStatus(message, recording = false) {
   status.textContent = message;
@@ -82,6 +85,29 @@ async function loadArchive() {
     hint.className = "empty-state";
     hint.textContent = "Showing a small preview. Connect the archive service to load all Are.na notes and share new ones.";
     archive.append(hint);
+  }
+}
+
+async function loadVoiceStatus() {
+  try {
+    const response = await fetch(api("/status"));
+    if (!response.ok) throw new Error("Voice service status unavailable");
+    const result = await response.json();
+    transcriptionAvailable = Boolean(result.transcription);
+    if (!transcriptionAvailable) {
+      voiceStatusMessage = "Voice transcription isn’t connected yet. The archive service needs a Whishper endpoint.";
+      connectionNote.textContent = voiceStatusMessage;
+    } else if (!result.sharing) {
+      voiceStatusMessage = "Whishper is connected, but Are.na write access isn’t configured yet.";
+      connectionNote.textContent = voiceStatusMessage;
+    } else {
+      voiceStatusMessage = "Voice transcription and sharing are connected. Speak a desire to add it to the archive.";
+      connectionNote.textContent = voiceStatusMessage;
+    }
+  } catch {
+    transcriptionAvailable = false;
+    voiceStatusMessage = "Voice transcription isn’t available: the archive API has not been deployed or connected to this page.";
+    connectionNote.textContent = voiceStatusMessage;
   }
 }
 
@@ -172,6 +198,10 @@ function beginRecordingSegment() {
 }
 
 async function startRecording() {
+  if (!transcriptionAvailable) {
+    setStatus(voiceStatusMessage);
+    return;
+  }
   if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) {
     setStatus("This browser can’t record audio. Try a current version of Chrome, Safari, or Firefox.");
     return;
@@ -229,6 +259,7 @@ document.querySelector("#enter").addEventListener("click", () => {
   intro.hidden = true;
   archiveView.hidden = false;
   loadArchive();
+  loadVoiceStatus();
 });
 document.querySelector("#share-trigger").addEventListener("click", () => shareDialog.showModal());
 document.querySelector("#record-start").addEventListener("click", startRecording);
