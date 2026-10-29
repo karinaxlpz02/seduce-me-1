@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#ffffff">
   <title>desire lines</title>
-  <link rel="stylesheet" href="style.css?v=10">
+  <link rel="stylesheet" href="style.css?v=11">
   <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.30/dist/bundle.min.js"></script>
 </head>
@@ -27,7 +27,7 @@
         <button type="button" data-mode="paths" aria-pressed="false">paths</button>
       </nav>
       <span class="sr-only" id="archive-count">—</span>
-      <p class="sr-only" id="connection-note" role="status">The Are.na archive loads publicly. Live transcription is available in supported browsers.</p>
+      <p class="sr-only" id="connection-note" role="status">The collection is available to browse. Live transcription is available in supported browsers.</p>
       <p class="sr-only" id="now-speaking" aria-live="polite">choose a line to hear it</p>
       <div class="sr-only">
         <label for="voice-select">Spoken voice</label>
@@ -73,18 +73,11 @@
       <div class="writing-area"><span class="plus plus-left" aria-hidden="true">＋</span><span class="plus plus-right" aria-hidden="true">＋</span><label class="sr-only" for="transcript">Your note</label><textarea id="transcript" rows="5" placeholder="Your words will appear here as you speak…"></textarea></div>
       <div class="share-status"><span id="record-status" aria-live="polite">Your microphone is off.</span><p class="share-message" id="share-message" role="status"></p></div>
       <footer class="share-footer">
-        <div class="arena-connect" id="arena-connect">
-          <label for="arena-client-id">Are.na app client ID</label>
-          <input id="arena-client-id" type="text" autocomplete="off" placeholder="Paste your public client ID">
-          <button id="arena-connect-button" type="button">connect Are.na</button>
-          <a href="https://www.are.na/oauth/applications" target="_blank" rel="noreferrer">create an app</a>
-          <p>Set the app redirect URL to <code>https://karinaxlpz02.github.io/seduce-me-1/6/</code>. Your note will be added to the public collection.</p>
-        </div>
         <div class="share-footer-actions"><button class="publish-button" id="publish" type="button" disabled>share your note</button><button id="return-collection" type="button">return to collection</button></div>
-        <p class="privacy-note">Your note is published to the Shared Desires Are.na collection after you connect your account. Live speech recognition may use your browser’s speech service; Whisper fallback transcribes on this device.</p>
+        <p class="privacy-note">Your note is saved in this website’s collection on this device. It is not sent to another service. Live speech recognition may use your browser’s speech service; Whisper fallback transcribes on this device.</p>
       </footer>
     </dialog>
   </main>
-  <script type="module" src="assets-build/app.js?v=10"></script>
+  <script type="module" src="assets-build/app.js?v=11"></script>
 </body>
 </html>

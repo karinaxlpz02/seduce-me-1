@@ -29,7 +29,6 @@ const shareMessage = document.querySelector("#share-message");
 const startButton = document.querySelector("#record-start");
 const stopButton = document.querySelector("#record-stop");
 const copyButton = document.querySelector("#publish");
-const clientIdInput = document.querySelector("#arena-client-id");
 const voiceSelect = document.querySelector("#voice-select");
 const rateControl = document.querySelector("#rate");
 const nowSpeaking = document.querySelector("#now-speaking");
@@ -56,9 +55,6 @@ const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecogni
 let recognition;
 let liveTranscriptBase = "";
 let currentMode = "grid";
-let arenaToken = sessionStorage.getItem("shared-desires-arena-token") || "";
-const savedClientId = localStorage.getItem("shared-desires-arena-client-id") || "";
-clientIdInput.value = savedClientId;
 transcript.value = sessionStorage.getItem("shared-desires-note-draft") || "";
 copyButton.disabled = !transcript.value.trim();
 
@@ -73,6 +69,15 @@ function setStatus(message, speaking = false) {
 
 function textFor(item) {
   return item.text || item.content?.plain || item.content?.markdown || item.title || "";
+}
+
+function websiteNotes() {
+  try {
+    const notes = JSON.parse(localStorage.getItem("shared-desires-website-notes") || "[]");
+    return Array.isArray(notes) ? notes.filter(note => typeof note.text === "string" && note.text.trim()) : [];
+  } catch {
+    return [];
+  }
 }
 
 function renderArchive(items) {
@@ -182,8 +187,8 @@ async function loadArchive() {
       }
       page = result.meta?.next_page || null;
     }
-    renderArchive(items);
-    connectionNote.textContent = `Live speech recognition in supported browsers · on-device Whisper fallback (${modelName}, ${modelSize}).`;
+    renderArchive([...websiteNotes(), ...items]);
+    connectionNote.textContent = `Your notes are saved in this browser · live speech recognition in supported browsers · on-device Whisper fallback (${modelName}, ${modelSize}).`;
   } catch {
     const previewNotes = [
       "Chronically online.",
@@ -191,8 +196,8 @@ async function loadArchive() {
       "Having a lover is making a quilt out of many small closed-door rituals until the blanket is so big you can sleep under it every night",
       ...fallbackNotes
     ];
-    renderArchive(previewNotes.map((text, index) => ({ text, author: "notes on desire", id: `local-${index}` })));
-    connectionNote.textContent = "Showing the saved notes preview. The full Are.na archive could not be reached.";
+    renderArchive([...websiteNotes(), ...previewNotes.map((text, index) => ({ text, author: "notes on desire", id: `local-${index}` }))]);
+    connectionNote.textContent = "Showing the saved notes preview and notes saved in this browser.";
   }
 }
 
@@ -364,106 +369,21 @@ function stopRecording() {
   void processUtterances();
 }
 
-function randomToken(bytes = 48) {
-  const values = crypto.getRandomValues(new Uint8Array(bytes));
-  return btoa(String.fromCharCode(...values)).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
-}
-
-async function sha256(value) {
-  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
-  return btoa(String.fromCharCode(...new Uint8Array(digest))).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
-}
-
-async function connectArena() {
-  const clientId = clientIdInput.value.trim();
-  if (!clientId) {
-    shareMessage.textContent = "Add your public Are.na app client ID first.";
-    clientIdInput.focus();
-    return;
-  }
-  if (transcript.value.trim()) sessionStorage.setItem("shared-desires-note-draft", transcript.value.trim());
-  localStorage.setItem("shared-desires-arena-client-id", clientId);
-  const verifier = randomToken();
-  const state = randomToken(24);
-  sessionStorage.setItem("shared-desires-arena-verifier", verifier);
-  sessionStorage.setItem("shared-desires-arena-state", state);
-  sessionStorage.setItem("shared-desires-arena-client-id", clientId);
-  const authorize = new URL("https://www.are.na/oauth/authorize");
-  authorize.search = new URLSearchParams({
-    response_type: "code", client_id: clientId,
-    redirect_uri: `${location.origin}${location.pathname}`, scope: "write", state,
-    code_challenge: await sha256(verifier), code_challenge_method: "S256"
-  });
-  location.assign(authorize);
-}
-
-async function handleArenaCallback() {
-  const query = new URLSearchParams(location.search);
-  const code = query.get("code");
-  if (!code) return;
-  const state = query.get("state");
-  const expectedState = sessionStorage.getItem("shared-desires-arena-state");
-  const verifier = sessionStorage.getItem("shared-desires-arena-verifier");
-  const clientId = sessionStorage.getItem("shared-desires-arena-client-id") || savedClientId;
-  history.replaceState(history.state, "", `${location.pathname}${location.hash}`);
-  if (!state || state !== expectedState || !verifier || !clientId) {
-    shareDialog.showModal();
-    shareMessage.textContent = "Are.na connection could not be verified. Please connect again.";
-    return;
-  }
+function shareNote() {
+  const text = transcript.value.trim();
+  if (!text) return;
+  const note = { id: `website-${crypto.randomUUID()}`, text, author: "website visitor", createdAt: new Date().toISOString() };
   try {
-    const response = await fetch("https://api.are.na/v3/oauth/token", {
-      method: "POST",
-      headers: { "content-type": "application/json", accept: "application/json" },
-      body: JSON.stringify({ grant_type: "authorization_code", client_id: clientId, code, redirect_uri: `${location.origin}${location.pathname}`, code_verifier: verifier })
-    });
-    if (!response.ok) throw new Error(`Are.na returned ${response.status}`);
-    const result = await response.json();
-    if (!result.access_token) throw new Error("Are.na did not return an access token");
-    arenaToken = result.access_token;
-    sessionStorage.setItem("shared-desires-arena-token", arenaToken);
-    sessionStorage.removeItem("shared-desires-arena-state");
-    sessionStorage.removeItem("shared-desires-arena-verifier");
-    shareDialog.showModal();
-    shareMessage.textContent = "Connected. Your note is ready to share with the collection.";
-  } catch (error) {
-    shareDialog.showModal();
-    shareMessage.textContent = error instanceof Error ? `Could not connect to Are.na: ${error.message}` : "Could not connect to Are.na.";
-  }
-}
-
-async function shareNote() {
-  if (!transcript.value.trim()) return;
-  if (!arenaToken) {
-    sessionStorage.setItem("shared-desires-note-draft", transcript.value.trim());
-    await connectArena();
-    return;
-  }
-  copyButton.disabled = true;
-  shareMessage.textContent = "Adding your note to the collection…";
-  try {
-    const response = await fetch("https://api.are.na/v3/blocks", {
-      method: "POST",
-      headers: { authorization: `Bearer ${arenaToken}`, "content-type": "application/json", accept: "application/json" },
-      body: JSON.stringify({ value: transcript.value.trim(), channels: [{ id: "notes-on-are-na-about-desire" }] })
-    });
-    if (response.status === 401 || response.status === 403) {
-      arenaToken = "";
-      sessionStorage.removeItem("shared-desires-arena-token");
-      shareMessage.textContent = "Please reconnect your Are.na account to share this note.";
-      copyButton.disabled = false;
-      return;
-    }
-    if (!response.ok) throw new Error(`Are.na returned ${response.status}`);
-    shareMessage.textContent = "Your note has been added to the collection. Thank you for sharing.";
+    const notes = websiteNotes();
+    notes.unshift(note);
+    localStorage.setItem("shared-desires-website-notes", JSON.stringify(notes));
+    renderArchive([...notes, ...archiveItems.filter(item => !String(item.id || "").startsWith("website-"))]);
+    shareMessage.textContent = "Your note has been added to this website’s collection on this device.";
     transcript.value = "";
     sessionStorage.removeItem("shared-desires-note-draft");
     copyButton.disabled = true;
-    archiveLoaded = false;
-    void loadArchive();
-  } catch (error) {
-    shareMessage.textContent = error instanceof Error ? `Could not share your note: ${error.message}` : "Could not share your note. Please try again.";
-    copyButton.disabled = false;
+  } catch {
+    shareMessage.textContent = "This browser could not save the note. Check available site storage and try again.";
   }
 }
 
@@ -656,7 +576,6 @@ document.querySelector("#return-collection").addEventListener("click", () => {
   setMode("grid");
   showView("archive-view");
 });
-connectButton.addEventListener("click", connectArena);
 transcript.addEventListener("input", () => {
   copyButton.disabled = !transcript.value.trim();
   if (transcript.value.trim()) sessionStorage.setItem("shared-desires-note-draft", transcript.value.trim());
@@ -675,4 +594,3 @@ if ("speechSynthesis" in window) {
   speechSynthesis.addEventListener("voiceschanged", loadVoices);
 }
 if (currentView !== "home-view") void loadArchive();
-void handleArenaCallback();

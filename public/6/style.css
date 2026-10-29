@@ -1,6 +1,21 @@
+@font-face {
+  font-family: "Palma Test";
+  src: url("fonts/PalmaBETATest-Regular.otf") format("opentype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Palma Test Initial";
+  src: url("fonts/PalmaBETATest-Initial.otf") format("opentype");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
 :root {
   color-scheme: light;
-  font-family: "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  font-family: "Palma Test", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
   color: #ff2eab;
   background: #fff;
   font-synthesis: none;
@@ -27,8 +42,11 @@ button { cursor: pointer; }
 .welcome button:hover { text-decoration: underline; text-underline-offset: .25em; }
 
 .archive-view { padding: 0 0 4.2rem; }
-.mode-nav { position: sticky; top: 0; z-index: 5; display: flex; justify-content: center; gap: clamp(1.5rem, 5vw, 4rem); min-height: 3rem; padding: .85rem var(--gutter) .6rem; background: rgba(255,255,255,.96); }
+.mode-nav { position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: repeat(3, 1fr); align-items: center; min-height: 3rem; padding: .85rem var(--gutter) .6rem; background: rgba(255,255,255,.96); }
 .mode-nav button { padding: 0; border: 0; background: transparent; color: var(--pink); font-size: .78rem; text-transform: uppercase; }
+.mode-nav button:nth-child(1) { justify-self: start; }
+.mode-nav button:nth-child(2) { justify-self: center; }
+.mode-nav button:nth-child(3) { justify-self: end; }
 .mode-nav button[aria-pressed="true"] { text-decoration: underline; text-underline-offset: .25em; }
 .mode-panel { min-height: calc(100svh - 6rem); }
 .grid-field { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; column-gap: clamp(1.5rem, 5vw, 5rem); row-gap: clamp(2.3rem, 5vw, 5rem); padding-top: 2rem; }
@@ -103,12 +121,6 @@ button { cursor: pointer; }
 .share-status { flex: 0 0 auto; min-height: 2.2rem; font-size: .74rem; }
 .share-message { display: inline; margin: 0 0 0 .6rem; }
 .share-footer { flex: 0 0 auto; padding-bottom: .65rem; border-top: 1px solid var(--line); text-align: center; }
-.arena-connect { display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: .45rem .65rem; padding: .55rem 0 .25rem; font-size: .68rem; }
-.arena-connect label { text-transform: uppercase; }
-.arena-connect input { width: min(15rem, 42vw); padding: .25rem .4rem; border: 1px solid var(--line); outline-color: var(--pink); font-size: .72rem; }
-.arena-connect button, .arena-connect a { padding: .25rem .35rem; border: 0; background: transparent; color: var(--pink); font-size: .68rem; text-transform: uppercase; }
-.arena-connect p { flex-basis: 100%; margin: 0; font-size: .61rem; opacity: .75; }
-.arena-connect code { font-family: inherit; }
 .share-footer-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line); }
 .publish-button { flex: 1; min-height: 3.2rem; padding: .8rem 0; border: 0; background: transparent; font-size: .78rem; text-transform: uppercase; }
 #return-collection { padding: .8rem 0 .8rem 1rem; border: 0; background: transparent; color: var(--pink); font-size: .72rem; text-transform: uppercase; }
@@ -148,10 +160,6 @@ button { cursor: pointer; }
   .writing-area { padding: 1.9rem .85rem; }
   .writing-area textarea { font-size: clamp(1.45rem, 6.2vw, 2rem); }
   .share-footer { padding-bottom: .55rem; }
-  .arena-connect { gap: .25rem .35rem; padding-top: .35rem; }
-  .arena-connect label { flex-basis: 100%; }
-  .arena-connect input { width: min(12rem, 48vw); }
-  .arena-connect p { font-size: .55rem; }
   #return-collection { font-size: .62rem; }
   .publish-button { min-height: 2.9rem; }
   .privacy-note { font-size: .59rem; }
