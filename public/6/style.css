@@ -43,7 +43,10 @@ button { cursor: pointer; }
 .about-view { padding: 1.7rem var(--gutter) 4.2rem; }
 .about-copy { max-width: 48rem; margin: 0; font-size: clamp(.9rem, 1.08vw, 1rem); line-height: 1.5; letter-spacing: -.015em; }
 
-.bottom-bar { position: fixed; z-index: 3; inset: auto 0 0; height: 3rem; display: flex; align-items: center; justify-content: space-between; padding: 0 var(--gutter); border-top: 1px solid var(--line); background: #fff; }
+.bottom-bar { position: fixed; z-index: 3; inset: auto 0 0; height: 3rem; display: grid; grid-template-columns: 1fr 1fr 1fr; align-items: center; padding: 0 var(--gutter); border-top: 1px solid var(--line); background: #fff; }
+.collection-trigger { justify-self: start; }
+.share-trigger { justify-self: center; }
+.about-trigger { justify-self: end; }
 .bottom-bar button { padding: .4rem 0; border: 0; background: transparent; color: var(--pink); font-size: .78rem; line-height: 1; text-transform: uppercase; }
 .bottom-bar button:hover { text-decoration: underline; text-underline-offset: .25em; }
 
