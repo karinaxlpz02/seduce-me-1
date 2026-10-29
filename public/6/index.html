@@ -5,20 +5,27 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#ffffff">
   <title>desire lines</title>
-  <link rel="stylesheet" href="style.css?v=9">
+  <link rel="stylesheet" href="style.css?v=10">
   <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.30/dist/bundle.min.js"></script>
 </head>
 <body>
   <main>
     <section id="home-view" class="home-view" aria-label="Shared Desires homepage">
-      <button class="welcome" id="enter-archive" type="button" aria-label="Enter the archive">
+      <div class="welcome">
         <span>Welcome To</span>
         <strong>Shared Desires</strong>
-      </button>
+        <p>Shared Desires is an online platform for reflecting on personal desire and intimacy. Leave a note in a growing collection, where each voice meets and responds to another.</p>
+        <button id="enter-archive" type="button">enter the collection</button>
+      </div>
     </section>
 
     <section id="archive-view" class="archive-view" aria-label="Desire archive" hidden>
+      <nav class="mode-nav" aria-label="Collection view">
+        <button type="button" data-mode="globe" aria-pressed="false">globe</button>
+        <button type="button" data-mode="grid" aria-pressed="true">grid</button>
+        <button type="button" data-mode="paths" aria-pressed="false">paths</button>
+      </nav>
       <span class="sr-only" id="archive-count">—</span>
       <p class="sr-only" id="connection-note" role="status">The Are.na archive loads publicly. Live transcription is available in supported browsers.</p>
       <p class="sr-only" id="now-speaking" aria-live="polite">choose a line to hear it</p>
@@ -28,7 +35,7 @@
         <label for="rate">Speaking pace</label>
         <input id="rate" type="range" min="0.65" max="1.3" step="0.05" value="0.9">
       </div>
-      <div class="collection-scroll" id="collection-scroll">
+      <div class="collection-scroll mode-panel" id="globe-mode" hidden>
         <div class="collection-scene" id="collection-scene">
           <div class="edge-notes" id="edge-notes" aria-hidden="true"></div>
           <div class="globe-space" id="globe-space" aria-label="A rotating globe of desire notes. Drag to turn it, then scroll to move through the notes.">
@@ -38,7 +45,12 @@
           <p class="globe-hint">drag to turn · scroll to enter</p>
         </div>
       </div>
-      <div id="archive" class="archive" aria-live="polite" aria-busy="true" aria-label="All notes in the collection"></div>
+      <div id="grid-mode" class="mode-panel grid-mode">
+        <div id="archive" class="archive grid-field" aria-live="polite" aria-busy="true" aria-label="All notes in the collection"></div>
+      </div>
+      <div id="paths-mode" class="mode-panel paths-mode" hidden aria-label="Notes arranged in paths">
+        <div id="paths-field" class="paths-field"></div>
+      </div>
     </section>
 
     <section class="about-view" id="about-view" aria-labelledby="about-title" hidden>
@@ -60,9 +72,19 @@
       </div>
       <div class="writing-area"><span class="plus plus-left" aria-hidden="true">＋</span><span class="plus plus-right" aria-hidden="true">＋</span><label class="sr-only" for="transcript">Your note</label><textarea id="transcript" rows="5" placeholder="Your words will appear here as you speak…"></textarea></div>
       <div class="share-status"><span id="record-status" aria-live="polite">Your microphone is off.</span><p class="share-message" id="share-message" role="status"></p></div>
-      <footer class="share-footer"><button class="publish-button" id="publish" type="button" disabled>share your note</button><p class="privacy-note">Your note is copied to your clipboard. It is not sent to the archive. Live speech recognition may use your browser’s speech service; Whisper fallback transcribes on this device.</p></footer>
+      <footer class="share-footer">
+        <div class="arena-connect" id="arena-connect">
+          <label for="arena-client-id">Are.na app client ID</label>
+          <input id="arena-client-id" type="text" autocomplete="off" placeholder="Paste your public client ID">
+          <button id="arena-connect-button" type="button">connect Are.na</button>
+          <a href="https://www.are.na/oauth/applications" target="_blank" rel="noreferrer">create an app</a>
+          <p>Set the app redirect URL to <code>https://karinaxlpz02.github.io/seduce-me-1/6/</code>. Your note will be added to the public collection.</p>
+        </div>
+        <div class="share-footer-actions"><button class="publish-button" id="publish" type="button" disabled>share your note</button><button id="return-collection" type="button">return to collection</button></div>
+        <p class="privacy-note">Your note is published to the Shared Desires Are.na collection after you connect your account. Live speech recognition may use your browser’s speech service; Whisper fallback transcribes on this device.</p>
+      </footer>
     </dialog>
   </main>
-  <script type="module" src="assets-build/app.js?v=9"></script>
+  <script type="module" src="assets-build/app.js?v=10"></script>
 </body>
 </html>
