@@ -24,8 +24,24 @@ button { cursor: pointer; }
 .welcome strong { font-size: clamp(1.45rem, 2.1vw, 1.9rem); font-weight: 500; letter-spacing: -.05em; }
 .welcome:hover strong { text-decoration: underline; text-underline-offset: .18em; }
 
-.archive-view { padding: 1.9rem var(--gutter) 4.2rem; }
-.archive { display: flex; flex-direction: column; align-items: stretch; gap: .55rem; width: 100%; max-width: 1500px; margin: 0 auto; }
+.archive-view { padding: 0 0 4.2rem; }
+.collection-scroll { position: relative; height: 220svh; }
+.collection-scene { position: sticky; top: 0; z-index: 0; height: 100svh; overflow: hidden; background: #fff; --scroll-progress: 0; }
+.globe-space { position: absolute; z-index: 2; inset: 0; display: grid; place-items: center; perspective: 1200px; cursor: grab; touch-action: pan-y; }
+.globe-space:active { cursor: grabbing; }
+.globe { --globe-radius: min(36vw, 36svh, 380px); position: absolute; top: 50%; left: 50%; width: calc(var(--globe-radius) * 2); height: calc(var(--globe-radius) * 2); margin: calc(var(--globe-radius) * -1); transform-style: preserve-3d; will-change: transform; }
+.globe-note { position: absolute; top: 50%; left: 50%; width: clamp(10rem, 20vw, 22rem); max-width: 42vw; padding: .1rem; border: 0; background: transparent; color: var(--pink); font-size: clamp(.68rem, .87vw, .9rem); line-height: 1.3; letter-spacing: -.035em; text-align: center; text-wrap: balance; transform: translate(-50%, -50%) rotateY(var(--longitude)) rotateX(var(--latitude)) rotateZ(var(--tilt)) translateZ(var(--globe-radius)); backface-visibility: hidden; opacity: var(--globe-opacity, 1); transition: color .2s ease; }
+.globe-note:hover { text-decoration: underline; text-underline-offset: .18em; }
+.edge-notes { position: absolute; z-index: 1; inset: 0; pointer-events: none; }
+.edge-note { position: absolute; display: block; width: min(24vw, 22rem); color: var(--pink); font-size: clamp(.68rem, .9vw, .92rem); line-height: 1.3; letter-spacing: -.025em; opacity: var(--edge-opacity, 0); animation: edge-drift 7s ease-in-out infinite alternate; }
+.edge-note-0 { top: 13%; left: var(--gutter); transform: rotate(-5deg); }
+.edge-note-1 { top: 20%; right: var(--gutter); text-align: right; transform: rotate(4deg); animation-delay: -2s; }
+.edge-note-2 { bottom: 17%; left: var(--gutter); transform: rotate(3deg); animation-delay: -4s; }
+.edge-note-3 { right: var(--gutter); bottom: 15%; text-align: right; transform: rotate(-4deg); animation-delay: -1s; }
+@keyframes edge-drift { from { translate: 0 -7px; } to { translate: 0 9px; } }
+.globe-particles { position: absolute; z-index: 3; inset: 0; pointer-events: none; }
+.globe-hint { position: absolute; z-index: 4; right: var(--gutter); bottom: 3.8rem; margin: 0; color: var(--pink); font-size: .7rem; text-transform: uppercase; opacity: var(--hint-opacity, 1); }
+.archive { display: flex; flex-direction: column; align-items: stretch; gap: .55rem; width: 100%; max-width: 1500px; margin: 0 auto; padding: 2.5rem var(--gutter) 5rem; }
 .desire-card { width: max-content; max-width: 100%; padding: 0; border: 0; background: transparent; color: var(--pink); text-align: left; font-size: clamp(.9rem, 1.05vw, 1rem); line-height: 1.42; letter-spacing: -.025em; transition: opacity .18s ease; }
 .desire-card:nth-child(8n + 1) { align-self: flex-start; max-width: 56%; }
 .desire-card:nth-child(8n + 2) { align-self: center; max-width: 58%; margin-top: .25rem; text-align: center; }
@@ -73,7 +89,12 @@ button { cursor: pointer; }
 
 @media (max-width: 680px) {
   :root { --gutter: 1.2rem; }
-  .archive-view { padding-top: 1.9rem; }
+  .collection-scroll { height: 190svh; }
+  .globe { --globe-radius: min(39vw, 30svh, 320px); }
+  .globe-note { width: clamp(7rem, 32vw, 13rem); max-width: 43vw; font-size: .72rem; line-height: 1.25; }
+  .edge-note { width: min(30vw, 9rem); font-size: .67rem; }
+  .globe-hint { right: var(--gutter); bottom: 3.8rem; font-size: .62rem; }
+  .archive { padding-top: 2rem; }
   .archive { gap: .55rem; }
   .desire-card { font-size: .9rem; line-height: 1.42; }
   .desire-card:nth-child(8n + 1) { max-width: 64%; }

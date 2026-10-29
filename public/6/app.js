@@ -11,6 +11,12 @@ const archiveView = document.querySelector("#archive-view");
 const aboutView = document.querySelector("#about-view");
 const archive = document.querySelector("#archive");
 const archiveCount = document.querySelector("#archive-count");
+const collectionScroll = document.querySelector("#collection-scroll");
+const collectionScene = document.querySelector("#collection-scene");
+const globe = document.querySelector("#globe");
+const edgeNotes = document.querySelector("#edge-notes");
+const particleCanvas = document.querySelector("#globe-particles");
+const particleContext = particleCanvas.getContext("2d");
 const connectionNote = document.querySelector("#connection-note");
 const shareDialog = document.querySelector("#share-dialog");
 const status = document.querySelector("#record-status");
@@ -25,6 +31,14 @@ const nowSpeaking = document.querySelector("#now-speaking");
 
 let archiveItems = [];
 let archiveLoaded = false;
+let globeParticles = [];
+let particlesCaptured = false;
+let globeProgress = 0;
+let globeRotationX = -9;
+let globeRotationY = -18;
+let dragPoint = null;
+let particleFrame = 0;
+let particleRatio = 1;
 let currentView = (location.hash === "#archive" ? "archive-view" : location.hash === "#about" ? "about-view" : "home-view");
 let whisper = createWhisper();
 let micVAD;
@@ -70,6 +84,8 @@ function renderArchive(items) {
     return (leftRank < 0 ? featured.length : leftRank) - (rightRank < 0 ? featured.length : rightRank);
   });
   archive.replaceChildren();
+  globe.replaceChildren();
+  edgeNotes.replaceChildren();
   if (!archiveItems.length) {
     const empty = document.createElement("p");
     empty.className = "empty-state";
@@ -88,9 +104,36 @@ function renderArchive(items) {
     card.setAttribute("aria-label", `Listen to note ${index + 1}: ${text}`);
     card.addEventListener("click", () => speak(text, card));
     archive.append(card);
+
+    if (index < 54) {
+      const count = Math.min(54, archiveItems.length);
+      const latitude = Math.acos(1 - 2 * (index + .5) / count) * 180 / Math.PI - 90;
+      const longitude = index * 137.508;
+      const globeNote = document.createElement("button");
+      globeNote.type = "button";
+      globeNote.className = "globe-note";
+      globeNote.style.setProperty("--latitude", `${latitude}deg`);
+      globeNote.style.setProperty("--longitude", `${longitude}deg`);
+      globeNote.style.setProperty("--tilt", `${((index * 29) % 17) - 8}deg`);
+      globeNote.setAttribute("aria-label", `Listen to note ${index + 1}: ${text}`);
+      const excerpt = text.length > 118 ? `${text.slice(0, 115).trimEnd()}…` : text;
+      globeNote.textContent = excerpt;
+      globeNote.addEventListener("click", () => speak(text, globeNote));
+      globe.append(globeNote);
+    }
+
+    if (index < 4) {
+      const edgeNote = document.createElement("span");
+      edgeNote.className = `edge-note edge-note-${index % 4}`;
+      edgeNote.textContent = text.length > 90 ? `${text.slice(0, 87).trimEnd()}…` : text;
+      edgeNotes.append(edgeNote);
+    }
   });
   archiveCount.textContent = archiveItems.length;
   archive.setAttribute("aria-busy", "false");
+  particlesCaptured = false;
+  globeParticles = [];
+  updateCollectionScene();
 }
 
 async function loadArchive() {
@@ -141,7 +184,7 @@ function speak(text, card) {
     return;
   }
   speechSynthesis.cancel();
-  archive.querySelector('[aria-pressed="true"]')?.setAttribute("aria-pressed", "false");
+  document.querySelector('[aria-pressed="true"]')?.setAttribute("aria-pressed", "false");
   card.setAttribute("aria-pressed", "true");
   const utterance = new SpeechSynthesisUtterance(text);
   const voiceIndex = Number(voiceSelect.value);
@@ -317,8 +360,153 @@ function showView(viewId, pushHistory = true) {
     history.pushState({ viewId }, "", `#${route}`);
   }
   window.scrollTo(0, 0);
+  updateCollectionScene();
   if (viewId === "archive-view") void loadArchive();
 }
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function resizeParticleCanvas() {
+  particleRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+  particleCanvas.width = Math.round(window.innerWidth * particleRatio);
+  particleCanvas.height = Math.round(window.innerHeight * particleRatio);
+  particleCanvas.style.width = `${window.innerWidth}px`;
+  particleCanvas.style.height = `${window.innerHeight}px`;
+  drawGlobeParticles();
+}
+
+function captureGlobeParticles() {
+  particlesCaptured = true;
+  globeParticles = [];
+  const labels = [...globe.querySelectorAll(".globe-note")].slice(0, 54);
+  labels.forEach((label, labelIndex) => {
+    const bounds = label.getBoundingClientRect();
+    if (bounds.width < 3 || bounds.height < 3) return;
+
+    const style = getComputedStyle(label);
+    const fontSize = parseFloat(style.fontSize) || 12;
+    const lineHeight = parseFloat(style.lineHeight) || fontSize * 1.25;
+    const maskWidth = Math.max(1, Math.ceil(Math.min(label.offsetWidth || 200, 360)));
+    const mask = document.createElement("canvas");
+    const maskContext = mask.getContext("2d", { willReadFrequently: true });
+    mask.width = maskWidth;
+    mask.height = Math.ceil(Math.max(fontSize * 2, label.scrollHeight || lineHeight * 3));
+    maskContext.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+    maskContext.textBaseline = "top";
+    maskContext.fillStyle = "#ff2eab";
+    const lines = [];
+    let line = "";
+    for (const word of label.textContent.split(/\s+/)) {
+      const next = line ? `${line} ${word}` : word;
+      if (line && maskContext.measureText(next).width > maskWidth) {
+        lines.push(line);
+        line = word;
+      } else line = next;
+    }
+    if (line) lines.push(line);
+    lines.slice(0, Math.floor(mask.height / lineHeight)).forEach((text, index) => {
+      maskContext.fillText(text, 0, index * lineHeight, maskWidth);
+    });
+
+    const pixels = maskContext.getImageData(0, 0, mask.width, mask.height).data;
+    const candidates = [];
+    for (let y = 0; y < mask.height; y += 2) {
+      for (let x = 0; x < mask.width; x += 2) {
+        if (pixels[(y * mask.width + x) * 4 + 3] > 48) candidates.push({ x, y });
+      }
+    }
+    const stride = Math.max(1, Math.ceil(candidates.length / 24));
+    const scaleX = bounds.width / mask.width;
+    const scaleY = bounds.height / mask.height;
+    for (let i = 0; i < candidates.length; i += stride) {
+      const point = candidates[i];
+      const x = bounds.left + point.x * scaleX;
+      const y = bounds.top + point.y * scaleY;
+      const angle = Math.atan2(y - innerHeight / 2, x - innerWidth / 2);
+      const seed = (labelIndex * 97 + point.x * 13 + point.y * 31) % 127;
+      globeParticles.push({
+        x, y,
+        vx: Math.cos(angle + (seed % 17 - 8) * .025) * (50 + seed * 1.45),
+        vy: Math.sin(angle + (seed % 17 - 8) * .025) * (50 + seed * 1.45),
+        size: .7 + (seed % 7) * .13
+      });
+    }
+  });
+}
+
+function drawGlobeParticles() {
+  particleContext.setTransform(particleRatio, 0, 0, particleRatio, 0, 0);
+  particleContext.clearRect(0, 0, innerWidth, innerHeight);
+  if (!globeParticles.length || globeProgress <= .05) return;
+  const progress = clamp((globeProgress - .05) / .83, 0, 1);
+  const opacity = Math.sin(progress * Math.PI) * .82;
+  particleContext.fillStyle = `rgba(255,46,171,${opacity})`;
+  for (const particle of globeParticles) {
+    particleContext.fillRect(
+      particle.x + particle.vx * progress,
+      particle.y + particle.vy * progress,
+      particle.size,
+      particle.size
+    );
+  }
+}
+
+function updateCollectionScene() {
+  const bounds = collectionScroll.getBoundingClientRect();
+  const availableScroll = Math.max(1, collectionScroll.offsetHeight - innerHeight);
+  globeProgress = clamp(-bounds.top / availableScroll, 0, 1);
+  collectionScene.style.setProperty("--scroll-progress", globeProgress.toFixed(4));
+  collectionScene.style.setProperty("--globe-opacity", String(1 - clamp(globeProgress / .68, 0, 1)));
+  const edgePresence = .2 + Math.sin(globeProgress * Math.PI) * .65;
+  collectionScene.style.setProperty("--edge-opacity", String(edgePresence * clamp((1 - globeProgress) / .18, 0, 1)));
+  collectionScene.style.setProperty("--hint-opacity", String(1 - clamp(globeProgress / .22, 0, 1)));
+  const automaticTurn = performance.now() * .0025 * (1 - globeProgress);
+  globe.style.transform = `rotateX(${globeRotationX + globeProgress * 24}deg) rotateY(${globeRotationY + automaticTurn + globeProgress * 46}deg) scale(${1 + globeProgress * .45})`;
+  if (globeProgress > .025 && !particlesCaptured && globe.children.length) captureGlobeParticles();
+  drawGlobeParticles();
+  if (globeProgress > .02 && globeProgress < .99 && !particleFrame) {
+    const animate = () => {
+      drawGlobeParticles();
+      particleFrame = globeProgress > .02 && globeProgress < .99 ? requestAnimationFrame(animate) : 0;
+    };
+    particleFrame = requestAnimationFrame(animate);
+  }
+}
+
+const globeSpace = document.querySelector("#globe-space");
+globeSpace.addEventListener("pointerdown", event => {
+  dragPoint = { x: event.clientX, y: event.clientY, moved: false };
+  globeSpace.setPointerCapture(event.pointerId);
+});
+globeSpace.addEventListener("pointermove", event => {
+  if (!dragPoint) return;
+  const dx = event.clientX - dragPoint.x;
+  const dy = event.clientY - dragPoint.y;
+  if (Math.abs(dx) + Math.abs(dy) > 2) dragPoint.moved = true;
+  globeRotationY += dx * .34;
+  globeRotationX -= dy * .28;
+  dragPoint.x = event.clientX;
+  dragPoint.y = event.clientY;
+  updateCollectionScene();
+});
+globeSpace.addEventListener("pointerup", () => {
+  if (dragPoint?.moved) {
+    globe.dataset.dragged = "true";
+    setTimeout(() => { delete globe.dataset.dragged; }, 100);
+  }
+  dragPoint = null;
+});
+globe.addEventListener("click", event => {
+  if (globe.dataset.dragged) event.stopImmediatePropagation();
+}, true);
+window.addEventListener("scroll", updateCollectionScene, { passive: true });
+window.addEventListener("resize", () => {
+  resizeParticleCanvas();
+  updateCollectionScene();
+});
+resizeParticleCanvas();
 
 history.replaceState({ viewId: currentView }, "", location.href);
 document.querySelector("#enter-archive").addEventListener("click", () => showView("archive-view"));
