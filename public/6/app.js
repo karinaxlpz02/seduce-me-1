@@ -47,6 +47,8 @@ let whisper = createWhisper();
 let micVAD;
 let prepared = false;
 let listening = false;
+let recordingPaused = false;
+let resumeWhenEnded = false;
 let processing = false;
 let utteranceNumber = 0;
 const utteranceQueue = [];
@@ -231,6 +233,8 @@ async function startRecording() {
   }
   startButton.disabled = true;
   shareMessage.textContent = "";
+  recordingPaused = false;
+  stopButton.textContent = "pause recording";
   try {
     if (SpeechRecognition) {
       if (!recognition) {
@@ -259,6 +263,13 @@ async function startRecording() {
           }
         };
         recognition.onend = () => {
+          if (recordingPaused) {
+            const shouldResume = resumeWhenEnded;
+            recognition = null;
+            resumeWhenEnded = false;
+            if (shouldResume) void startRecording();
+            return;
+          }
           if (!listening) return;
           try {
             recognition.start();
@@ -334,13 +345,35 @@ async function processUtterances() {
 
 function stopRecording() {
   if (recognition && listening) recognition.stop();
+  recognition = null;
   micVAD?.pause();
   listening = false;
+  recordingPaused = false;
+  resumeWhenEnded = false;
   startButton.disabled = false;
   stopButton.disabled = true;
+  stopButton.textContent = "pause recording";
   setStatus("Recording finished. Your transcript is ready.");
   if (transcript.value.trim()) copyButton.disabled = false;
   void processUtterances();
+}
+
+function toggleRecording() {
+  if (listening) {
+    recordingPaused = true;
+    listening = false;
+    if (recognition) recognition.stop();
+    micVAD?.pause();
+    stopButton.textContent = "continue recording";
+    setStatus("Recording paused. Select Continue Recording to resume.");
+    return;
+  }
+  if (!recordingPaused) return;
+  if (recognition) {
+    resumeWhenEnded = true;
+    return;
+  }
+  void startRecording();
 }
 
 async function shareNote() {
@@ -631,7 +664,7 @@ window.addEventListener("popstate", event => showView(event.state?.viewId || "ho
 document.querySelector("#share-trigger").addEventListener("click", () => shareDialog.showModal());
 document.querySelector("#close-share").addEventListener("click", () => shareDialog.close());
 startButton.addEventListener("click", startRecording);
-stopButton.addEventListener("click", stopRecording);
+stopButton.addEventListener("click", toggleRecording);
 copyButton.addEventListener("click", shareNote);
 document.querySelector("#return-collection").addEventListener("click", () => {
   shareDialog.close();
@@ -644,7 +677,7 @@ transcript.addEventListener("input", () => {
   else sessionStorage.removeItem("shared-desires-note-draft");
 });
 shareDialog.addEventListener("close", () => {
-  if (listening) stopRecording();
+  if (listening || recordingPaused) stopRecording();
 });
 window.addEventListener("beforeunload", () => {
   micVAD?.destroy?.();
