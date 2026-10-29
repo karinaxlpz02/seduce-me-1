@@ -50,8 +50,8 @@ button { cursor: pointer; }
 .grid-field .desire-card { width: 100%; max-width: none !important; margin: 0 !important; align-self: stretch; text-align: left !important; font-size: calc(clamp(.95rem, 1.2vw, 1.15rem) + 2pt); line-height: 1.22; transform: none; }
 .paths-mode { padding: 2.5rem var(--gutter) 6rem; }
 .paths-field { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(2rem, 8vw, 8rem); max-width: 1500px; margin: 0 auto; }
-.path-lane { display: flex; flex-direction: column; gap: clamp(1rem, 3vw, 3rem); padding-top: 0; }
-.path-note { width: var(--path-width, 100%); padding: 0; border: 0; background: transparent; color: var(--pink); text-align: left; font-size: calc(clamp(.9rem, 1.1vw, 1.05rem) + 2pt); line-height: 1.22; letter-spacing: -.025em; transform: rotate(var(--path-tilt, 0deg)); }
+.path-lane { min-width: 0; display: flex; flex-direction: column; gap: clamp(1rem, 3vw, 3rem); padding-top: 0; }
+.path-note { width: min(var(--path-width, 100%), 100%); max-width: 100%; overflow-wrap: anywhere; padding: 0; border: 0; background: transparent; color: var(--pink); text-align: left; font-size: calc(clamp(.9rem, 1.1vw, 1.05rem) + 2pt); line-height: 1.22; letter-spacing: -.025em; transform: rotate(var(--path-tilt, 0deg)); }
 .path-note-dissolving .path-letter { opacity: 0; transition: opacity .75s ease-out; }
 .path-letter { display: inline-block; }
 .path-space { white-space: pre; }
@@ -142,3 +142,5 @@ button { cursor: pointer; }
   .privacy-note { font-size: calc(.59rem + 2pt); }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+
+.welcome button, .mode-nav button, .bottom-bar button, .close-dialog, .record-button, .publish-button, #return-collection { padding: 8px; border-radius: 2px; background: #fff; font-size: calc(.78rem + 2pt); }

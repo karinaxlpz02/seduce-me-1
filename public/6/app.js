@@ -137,7 +137,7 @@ function renderArchive(items) {
     pathNote.textContent = pathText;
     pathNote.dataset.pathNote = "true";
     pathNote.style.setProperty("--path-tilt", `${Math.round(Math.random() * 12 - 6)}deg`);
-    pathNote.style.setProperty("--path-width", `${72 + Math.round(Math.random() * 28)}%`);
+    pathNote.style.setProperty("--path-width", `${58 + Math.round(Math.random() * 42)}%`);
     pathNote.style.marginBlockStart = `${Math.round(Math.random() * 100)}px`;
     pathNote.style.marginInlineStart = `${Math.round(Math.random() * 18)}%`;
     const lane = pathLanes[Math.floor(Math.random() * pathLanes.length)];
@@ -625,7 +625,7 @@ document.querySelector("#enter-archive").addEventListener("click", () => { setMo
 document.querySelector("#collection-trigger").addEventListener("click", () => { setMode("grid"); showView("archive-view"); });
 document.querySelectorAll(".mode-nav [data-mode]").forEach(button => button.addEventListener("click", () => setMode(button.dataset.mode)));
 document.querySelector("#about-trigger").addEventListener("click", () => {
-  showView(currentView === "about-view" ? "home-view" : "about-view");
+  showView("home-view");
 });
 window.addEventListener("popstate", event => showView(event.state?.viewId || "home-view", false));
 document.querySelector("#share-trigger").addEventListener("click", () => shareDialog.showModal());
