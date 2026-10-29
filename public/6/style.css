@@ -106,7 +106,6 @@ button { cursor: pointer; }
 .publish-button { flex: 0 0 auto; min-height: 1.8rem; margin: .5rem 0; padding: 0 10px 10px; border: 1px solid var(--line); border-radius: 2px; background: transparent; font-size: calc(.78rem + 2pt + 2px); line-height: 1; text-transform: uppercase; }
 #return-collection { flex: 0 0 auto; min-height: 1.8rem; margin: .5rem 0; padding: 0 10px 10px; border: 1px solid var(--line); border-radius: 2px; background: transparent; color: var(--pink); font-size: calc(.72rem + 2pt + 2px); line-height: 1; text-transform: uppercase; }
 .welcome button:focus-visible, .mode-nav button:focus-visible, .bottom-bar button:focus-visible, .record-button:focus-visible, .publish-button:focus-visible, #return-collection:focus-visible { outline: 2px solid var(--pink); outline-offset: 2px; }
-.privacy-note { max-width: 36rem; margin: 0 auto .15rem; font-size: calc(.63rem + 2pt + 2px); line-height: 1.1; opacity: .7; }
 
 @media (max-width: 680px) {
   :root { --gutter: 1.2rem; }
@@ -134,7 +133,6 @@ button { cursor: pointer; }
   .share-footer { padding-bottom: .55rem; }
   #return-collection { min-height: 1.65rem; margin: .35rem 0; font-size: calc(.62rem + 2pt + 2px); }
   .publish-button { min-height: 2.9rem; }
-  .privacy-note { font-size: calc(.59rem + 2pt + 2px); }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
 
