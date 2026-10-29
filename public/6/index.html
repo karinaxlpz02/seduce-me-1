@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#ffffff">
   <title>desire lines</title>
-  <link rel="stylesheet" href="style.css?v=19">
+  <link rel="stylesheet" href="style.css?v=20">
   <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.30/dist/bundle.min.js"></script>
 </head>
@@ -60,7 +60,8 @@
       <h1 class="sr-only" id="share-title">Share a note</h1>
       <div class="record-actions">
         <button class="record-button" id="record-start" type="button">start speaking</button>
-        <button class="record-button secondary" id="record-stop" type="button" disabled>pause recording</button>
+        <button class="record-button secondary" id="record-stop" type="button" disabled>pause</button>
+        <button class="record-button" id="record-clear" type="button">clear note</button>
       </div>
       <div class="writing-area"><label class="sr-only" for="transcript">Your note</label><textarea id="transcript" rows="5" placeholder="Your words will appear here as you speak…"></textarea></div>
       <div class="share-status"><span id="record-status" aria-live="polite">Your microphone is off.</span><p class="share-message" id="share-message" role="status"></p></div>
@@ -70,6 +71,6 @@
       <canvas class="share-particles" id="share-particles" aria-hidden="true"></canvas>
     </dialog>
   </main>
-  <script type="module" src="assets-build/app.js?v=17"></script>
+  <script type="module" src="assets-build/app.js?v=19"></script>
 </body>
 </html>

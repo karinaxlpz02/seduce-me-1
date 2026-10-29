@@ -30,6 +30,7 @@ const transcript = document.querySelector("#transcript");
 const shareMessage = document.querySelector("#share-message");
 const startButton = document.querySelector("#record-start");
 const stopButton = document.querySelector("#record-stop");
+const clearButton = document.querySelector("#record-clear");
 const copyButton = document.querySelector("#publish");
 let archiveItems = [];
 let archiveLoaded = false;
@@ -49,6 +50,8 @@ let prepared = false;
 let listening = false;
 let recordingPaused = false;
 let resumeWhenEnded = false;
+let recordingRequest = 0;
+let transcriptRevision = 0;
 let processing = false;
 let utteranceNumber = 0;
 const utteranceQueue = [];
@@ -221,22 +224,25 @@ async function prepareModel() {
 }
 
 async function startRecording() {
-  if (!navigator.mediaDevices?.getUserMedia || !window.vad?.MicVAD) {
+  if (!navigator.mediaDevices?.getUserMedia || (!SpeechRecognition && !window.vad?.MicVAD)) {
     setStatus("Microphone transcription is unavailable in this browser.");
     return;
   }
+  const request = ++recordingRequest;
   startButton.disabled = true;
   shareMessage.textContent = "";
   recordingPaused = false;
-  stopButton.textContent = "pause recording";
+  stopButton.textContent = "pause";
   try {
     if (SpeechRecognition) {
       if (!recognition) {
+        const revision = transcriptRevision;
         recognition = new SpeechRecognition();
         recognition.continuous = true;
         recognition.interimResults = true;
         recognition.lang = document.documentElement.lang || "en-US";
         recognition.onresult = event => {
+          if (revision !== transcriptRevision) return;
           const finalParts = [];
           const interimParts = [];
           for (let index = 0; index < event.results.length; index += 1) {
@@ -281,6 +287,7 @@ async function startRecording() {
       return;
     }
     if (!prepared && !(await prepareModel())) return;
+    if (request !== recordingRequest) return;
     if (!micVAD) {
       micVAD = await window.vad.MicVAD.new({
         onSpeechStart: () => setStatus("Listening · speak and pause to see each phrase", true),
@@ -295,6 +302,7 @@ async function startRecording() {
         minSpeechMs: 120
       });
     }
+    if (request !== recordingRequest) return;
     micVAD.start();
     listening = true;
     startButton.disabled = true;
@@ -309,7 +317,7 @@ async function startRecording() {
 }
 
 function handleSpeechEnd(audio) {
-  utteranceQueue.push({ id: ++utteranceNumber, audio });
+  utteranceQueue.push({ id: ++utteranceNumber, audio, revision: transcriptRevision });
   if (listening) setStatus("Listening · transcribing your last phrase…", true);
   void processUtterances();
 }
@@ -322,6 +330,7 @@ async function processUtterances() {
       const item = utteranceQueue.shift();
       if (!item) continue;
       const segments = await whisper.transcribePCM(item.audio).collect();
+      if (item.revision !== transcriptRevision) continue;
       const text = segments.map(segment => segment.text.trim()).filter(Boolean).join(" ").trim();
       if (text) {
         transcript.value = `${transcript.value.trim()}${transcript.value.trim() ? " " : ""}${text}`;
@@ -346,10 +355,32 @@ function stopRecording() {
   resumeWhenEnded = false;
   startButton.disabled = false;
   stopButton.disabled = true;
-  stopButton.textContent = "pause recording";
+  stopButton.textContent = "pause";
   setStatus("Recording finished. Your transcript is ready.");
   if (transcript.value.trim()) copyButton.disabled = false;
   void processUtterances();
+}
+
+function clearNote() {
+  recordingRequest += 1;
+  transcriptRevision += 1;
+  if (recognition && listening) recognition.stop();
+  recognition = null;
+  micVAD?.pause();
+  listening = false;
+  recordingPaused = false;
+  resumeWhenEnded = false;
+  liveTranscriptBase = "";
+  utteranceQueue.length = 0;
+  transcript.value = "";
+  transcript.classList.remove("is-disintegrating");
+  sessionStorage.removeItem("shared-desires-note-draft");
+  copyButton.disabled = true;
+  startButton.disabled = false;
+  stopButton.disabled = true;
+  stopButton.textContent = "pause";
+  shareMessage.textContent = "";
+  setStatus("Your note is clear. Start speaking to begin again.");
 }
 
 function toggleRecording() {
@@ -659,6 +690,7 @@ window.addEventListener("popstate", event => showView(event.state?.viewId || "ho
 document.querySelector("#share-trigger").addEventListener("click", () => shareDialog.showModal());
 startButton.addEventListener("click", startRecording);
 stopButton.addEventListener("click", toggleRecording);
+clearButton.addEventListener("click", clearNote);
 copyButton.addEventListener("click", shareNote);
 document.querySelector("#return-collection").addEventListener("click", () => {
   shareDialog.close();
