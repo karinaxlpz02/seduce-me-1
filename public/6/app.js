@@ -210,7 +210,7 @@ function speak(text, card) {
     return;
   }
   speechSynthesis.cancel();
-  document.querySelector('[aria-pressed="true"]')?.setAttribute("aria-pressed", "false");
+  document.querySelectorAll('.desire-card[aria-pressed="true"], .globe-note[aria-pressed="true"], .path-note[aria-pressed="true"]').forEach(note => note.setAttribute("aria-pressed", "false"));
   card.setAttribute("aria-pressed", "true");
   const utterance = new SpeechSynthesisUtterance(text);
   const voiceIndex = Number(voiceSelect.value);
@@ -381,6 +381,7 @@ async function connectArena() {
     clientIdInput.focus();
     return;
   }
+  if (transcript.value.trim()) sessionStorage.setItem("shared-desires-note-draft", transcript.value.trim());
   localStorage.setItem("shared-desires-arena-client-id", clientId);
   const verifier = randomToken();
   const state = randomToken(24);
@@ -656,7 +657,11 @@ document.querySelector("#return-collection").addEventListener("click", () => {
   showView("archive-view");
 });
 connectButton.addEventListener("click", connectArena);
-transcript.addEventListener("input", () => { copyButton.disabled = !transcript.value.trim(); });
+transcript.addEventListener("input", () => {
+  copyButton.disabled = !transcript.value.trim();
+  if (transcript.value.trim()) sessionStorage.setItem("shared-desires-note-draft", transcript.value.trim());
+  else sessionStorage.removeItem("shared-desires-note-draft");
+});
 voiceSelect.addEventListener("change", () => speechSynthesis.cancel());
 shareDialog.addEventListener("close", () => {
   if (listening) stopRecording();
