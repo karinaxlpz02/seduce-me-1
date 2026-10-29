@@ -92,8 +92,6 @@ button { cursor: pointer; }
 .share-dialog:not([open]) { display: none; }
 .share-dialog { position: fixed; inset: 0; width: 100%; height: 100%; max-width: none; max-height: none; display: flex; flex-direction: column; margin: 0; padding: 0 var(--gutter); border: 0; background: #fff; color: var(--pink); }
 .share-dialog::backdrop { background: #fff; }
-.share-header { flex: 0 0 3.3rem; display: flex; justify-content: center; align-items: center; border-bottom: 1px solid var(--line); }
-.close-dialog { display: flex; align-items: center; gap: .4rem; padding: 0 10px 10px; border: 1px solid var(--line); border-radius: 2px; background: transparent; font-size: calc(.78rem + 2pt + 2px); line-height: 1; text-transform: uppercase; }
 .record-actions { flex: 0 0 4.25rem; display: flex; justify-content: space-between; align-items: center; gap: 25px; }
 .record-button { min-height: 1.65rem; padding: 0 10px 10px; border: 1px solid var(--line); border-radius: 2px; background: transparent; font-size: calc(.78rem + 2pt + 2px); line-height: 1; text-transform: uppercase; }
 .record-button:hover:not(:disabled) { text-decoration: underline; text-underline-offset: .25em; }
@@ -107,7 +105,7 @@ button { cursor: pointer; }
 .share-footer-actions { display: flex; justify-content: center; align-items: center; gap: 25px; border-top: 0; }
 .publish-button { flex: 0 0 auto; min-height: 1.8rem; margin: .5rem 0; padding: 0 10px 10px; border: 1px solid var(--line); border-radius: 2px; background: transparent; font-size: calc(.78rem + 2pt + 2px); line-height: 1; text-transform: uppercase; }
 #return-collection { flex: 0 0 auto; min-height: 1.8rem; margin: .5rem 0; padding: 0 10px 10px; border: 1px solid var(--line); border-radius: 2px; background: transparent; color: var(--pink); font-size: calc(.72rem + 2pt + 2px); line-height: 1; text-transform: uppercase; }
-.welcome button:focus-visible, .mode-nav button:focus-visible, .bottom-bar button:focus-visible, .close-dialog:focus-visible, .record-button:focus-visible, .publish-button:focus-visible, #return-collection:focus-visible { outline: 2px solid var(--pink); outline-offset: 2px; }
+.welcome button:focus-visible, .mode-nav button:focus-visible, .bottom-bar button:focus-visible, .record-button:focus-visible, .publish-button:focus-visible, #return-collection:focus-visible { outline: 2px solid var(--pink); outline-offset: 2px; }
 .privacy-note { max-width: 36rem; margin: 0 auto .15rem; font-size: calc(.63rem + 2pt + 2px); line-height: 1.2; opacity: .7; }
 
 @media (max-width: 680px) {
@@ -129,7 +127,6 @@ button { cursor: pointer; }
   .about-copy { font-size: calc(.9rem + 2pt + 2px); line-height: 1.3; }
   .bottom-bar { height: 3rem; }
   .share-dialog { --gutter: 1.25rem; }
-  .share-header { flex-basis: 3.3rem; }
   .record-actions { flex-basis: 4.25rem; }
   .record-button { font-size: calc(.72rem + 2pt + 2px); }
   .writing-area { padding: 1.9rem .85rem; }
@@ -141,4 +138,4 @@ button { cursor: pointer; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
 
-.welcome button, .mode-nav button, .bottom-bar button, .close-dialog, .record-button, .publish-button, #return-collection { padding: 7px 8px 9px; border-radius: 2px; background: #fff; font-size: calc(.78rem + 2pt + 2px); }
+.welcome button, .mode-nav button, .bottom-bar button, .record-button, .publish-button, #return-collection { padding: 5px 8px 9px; border-radius: 2px; background: #fff; font-size: calc(.78rem + 2pt + 2px); }

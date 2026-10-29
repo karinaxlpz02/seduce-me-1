@@ -657,7 +657,6 @@ document.querySelector("#about-trigger").addEventListener("click", () => {
 });
 window.addEventListener("popstate", event => showView(event.state?.viewId || "home-view", false));
 document.querySelector("#share-trigger").addEventListener("click", () => shareDialog.showModal());
-document.querySelector("#close-share").addEventListener("click", () => shareDialog.close());
 startButton.addEventListener("click", startRecording);
 stopButton.addEventListener("click", toggleRecording);
 copyButton.addEventListener("click", shareNote);
