@@ -6,6 +6,7 @@ const modelName = "whisper-tiny";
 const modelSize = "about 120 MB";
 const ortVersion = "1.22.0";
 const vadVersion = "0.0.30";
+const homeView = document.querySelector("#home-view");
 const archiveView = document.querySelector("#archive-view");
 const aboutView = document.querySelector("#about-view");
 const archive = document.querySelector("#archive");
@@ -23,6 +24,8 @@ const rateControl = document.querySelector("#rate");
 const nowSpeaking = document.querySelector("#now-speaking");
 
 let archiveItems = [];
+let archiveLoaded = false;
+let currentView = (location.hash === "#archive" ? "archive-view" : location.hash === "#about" ? "about-view" : "home-view");
 let whisper = createWhisper();
 let micVAD;
 let prepared = false;
@@ -49,6 +52,23 @@ function textFor(item) {
 
 function renderArchive(items) {
   archiveItems = items.filter(item => textFor(item).trim());
+  const featured = [
+    "chronically online",
+    "our aliveness is our erotic nature",
+    "i kiss you friendly",
+    "having a lover is making a quilt",
+    "my first kiss",
+    "i made us back into strangers",
+    "careful, you're losing yourself again",
+    "your erotic field carries memory"
+  ];
+  archiveItems.sort((left, right) => {
+    const leftText = textFor(left).trim().toLowerCase();
+    const rightText = textFor(right).trim().toLowerCase();
+    const leftRank = featured.findIndex(prefix => leftText.startsWith(prefix));
+    const rightRank = featured.findIndex(prefix => rightText.startsWith(prefix));
+    return (leftRank < 0 ? featured.length : leftRank) - (rightRank < 0 ? featured.length : rightRank);
+  });
   archive.replaceChildren();
   if (!archiveItems.length) {
     const empty = document.createElement("p");
@@ -64,16 +84,7 @@ function renderArchive(items) {
     card.setAttribute("aria-pressed", "false");
     const content = document.createElement("span");
     content.textContent = text;
-    const meta = document.createElement("span");
-    meta.className = "card-meta";
-    const byline = document.createElement("span");
-    byline.textContent = item.user?.name || item.author || "notes on desire";
-    const listen = document.createElement("span");
-    listen.className = "listen-icon";
-    listen.setAttribute("aria-hidden", "true");
-    listen.textContent = "↗";
-    meta.append(byline, listen);
-    card.append(content, meta);
+    card.append(content);
     card.setAttribute("aria-label", `Listen to note ${index + 1}: ${text}`);
     card.addEventListener("click", () => speak(text, card));
     archive.append(card);
@@ -83,6 +94,8 @@ function renderArchive(items) {
 }
 
 async function loadArchive() {
+  if (archiveLoaded) return;
+  archiveLoaded = true;
   try {
     const items = [];
     let page = 1;
@@ -103,7 +116,13 @@ async function loadArchive() {
     renderArchive(items);
     connectionNote.textContent = `Live speech recognition in supported browsers · on-device Whisper fallback (${modelName}, ${modelSize}).`;
   } catch {
-    renderArchive(fallbackNotes.map((text, index) => ({ text, author: "notes on desire", id: `local-${index}` })));
+    const previewNotes = [
+      "Chronically online.",
+      "I kiss you friendly,",
+      "Having a lover is making a quilt out of many small closed-door rituals until the blanket is so big you can sleep under it every night",
+      ...fallbackNotes
+    ];
+    renderArchive(previewNotes.map((text, index) => ({ text, author: "notes on desire", id: `local-${index}` })));
     connectionNote.textContent = "Showing the saved notes preview. The full Are.na archive could not be reached.";
   }
 }
@@ -288,17 +307,25 @@ async function copyTranscript() {
   }
 }
 
-document.querySelector("#about-trigger").addEventListener("click", () => {
-  archiveView.hidden = true;
-  aboutView.hidden = false;
+function showView(viewId, pushHistory = true) {
+  currentView = viewId;
+  homeView.hidden = viewId !== "home-view";
+  archiveView.hidden = viewId !== "archive-view";
+  aboutView.hidden = viewId !== "about-view";
+  if (pushHistory) {
+    const route = viewId.replace("-view", "");
+    history.pushState({ viewId }, "", `#${route}`);
+  }
   window.scrollTo(0, 0);
+  if (viewId === "archive-view") void loadArchive();
+}
+
+history.replaceState({ viewId: currentView }, "", location.href);
+document.querySelector("#enter-archive").addEventListener("click", () => showView("archive-view"));
+document.querySelector("#about-trigger").addEventListener("click", () => {
+  showView(currentView === "about-view" ? "home-view" : "about-view");
 });
-document.querySelector("#about-home").addEventListener("click", event => {
-  event.preventDefault();
-  aboutView.hidden = true;
-  archiveView.hidden = false;
-});
-document.querySelector("#about-leave-note").addEventListener("click", () => shareDialog.showModal());
+window.addEventListener("popstate", event => showView(event.state?.viewId || "home-view", false));
 document.querySelector("#share-trigger").addEventListener("click", () => shareDialog.showModal());
 document.querySelector("#close-share").addEventListener("click", () => shareDialog.close());
 startButton.addEventListener("click", startRecording);
@@ -316,4 +343,4 @@ if ("speechSynthesis" in window) {
   loadVoices();
   speechSynthesis.addEventListener("voiceschanged", loadVoices);
 }
-loadArchive();
+if (currentView !== "home-view") void loadArchive();
