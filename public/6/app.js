@@ -19,8 +19,10 @@ const collectionScroll = document.querySelector("#globe-mode");
 const collectionScene = document.querySelector("#collection-scene");
 const globe = document.querySelector("#globe");
 const edgeNotes = document.querySelector("#edge-notes");
-const particleCanvas = document.querySelector("#globe-particles");
-const particleContext = particleCanvas.getContext("2d");
+const pathParticleCanvas = document.querySelector("#path-particles");
+const pathParticleContext = pathParticleCanvas.getContext("2d");
+const shareParticleCanvas = document.querySelector("#share-particles");
+const shareParticleContext = shareParticleCanvas.getContext("2d");
 const connectionNote = document.querySelector("#connection-note");
 const shareDialog = document.querySelector("#share-dialog");
 const status = document.querySelector("#record-status");
@@ -29,20 +31,17 @@ const shareMessage = document.querySelector("#share-message");
 const startButton = document.querySelector("#record-start");
 const stopButton = document.querySelector("#record-stop");
 const copyButton = document.querySelector("#publish");
-const voiceSelect = document.querySelector("#voice-select");
-const rateControl = document.querySelector("#rate");
-const nowSpeaking = document.querySelector("#now-speaking");
-
 let archiveItems = [];
 let archiveLoaded = false;
-let globeParticles = [];
-let particlesCaptured = false;
+const pathParticleGroups = new Set();
 let globeProgress = 0;
 let globeRotationX = -9;
 let globeRotationY = -18;
 let dragPoint = null;
-let particleFrame = 0;
-let particleRatio = 1;
+let pathParticleFrame = 0;
+let pathPixelRatio = 1;
+let sharePixelRatio = 1;
+let previousPathsScroll = window.scrollY;
 let currentView = (location.hash === "#archive" ? "archive-view" : location.hash === "#about" ? "about-view" : "home-view");
 let whisper = createWhisper();
 let micVAD;
@@ -101,6 +100,13 @@ function renderArchive(items) {
   });
   archive.replaceChildren();
   pathsField.replaceChildren();
+  const pathLanes = Array.from({ length: 3 }, (_, index) => {
+    const lane = document.createElement("div");
+    lane.className = "path-lane";
+    lane.dataset.lane = String(index);
+    pathsField.append(lane);
+    return lane;
+  });
   globe.replaceChildren();
   edgeNotes.replaceChildren();
   if (!archiveItems.length) {
@@ -110,46 +116,44 @@ function renderArchive(items) {
     archive.append(empty);
     pathsField.textContent = "The archive is waiting for its first line.";
   }
+  const pathItems = [...archiveItems];
+  for (let index = pathItems.length - 1; index > 0; index -= 1) {
+    const swap = Math.floor(Math.random() * (index + 1));
+    [pathItems[index], pathItems[swap]] = [pathItems[swap], pathItems[index]];
+  }
+
   archiveItems.forEach((item, index) => {
     const text = textFor(item).trim();
-    const card = document.createElement("button");
-    card.type = "button";
+    const card = document.createElement("article");
     card.className = "desire-card";
-    card.setAttribute("aria-pressed", "false");
     const content = document.createElement("span");
     content.textContent = text;
     card.append(content);
-    card.setAttribute("aria-label", `Listen to note ${index + 1}: ${text}`);
-    card.addEventListener("click", () => speak(text, card));
     archive.append(card);
 
-    let lane = pathsField.querySelector(`[data-lane="${index % 3}"]`);
-    if (!lane) {
-      lane = document.createElement("div");
-      lane.className = "path-lane";
-      lane.dataset.lane = String(index % 3);
-      pathsField.append(lane);
-    }
-    const pathNote = card.cloneNode(true);
+    const pathText = textFor(pathItems[index]).trim();
+    const pathNote = document.createElement("p");
     pathNote.className = "path-note";
-    pathNote.style.setProperty("--note-tilt", `${((index * 17) % 11) - 5}deg`);
-    pathNote.addEventListener("click", () => speak(text, pathNote));
+    pathNote.textContent = pathText;
+    pathNote.dataset.pathNote = "true";
+    pathNote.style.setProperty("--path-tilt", `${Math.round(Math.random() * 12 - 6)}deg`);
+    pathNote.style.setProperty("--path-width", `${72 + Math.round(Math.random() * 28)}%`);
+    pathNote.style.marginBlockStart = `${Math.round(Math.random() * 100)}px`;
+    pathNote.style.marginInlineStart = `${Math.round(Math.random() * 18)}%`;
+    const lane = pathLanes[Math.floor(Math.random() * pathLanes.length)];
     lane.append(pathNote);
 
     if (index < 54) {
       const count = Math.min(54, archiveItems.length);
       const latitude = Math.acos(1 - 2 * (index + .5) / count) * 180 / Math.PI - 90;
       const longitude = index * 137.508;
-      const globeNote = document.createElement("button");
-      globeNote.type = "button";
+      const globeNote = document.createElement("span");
       globeNote.className = "globe-note";
       globeNote.style.setProperty("--latitude", `${latitude}deg`);
       globeNote.style.setProperty("--longitude", `${longitude}deg`);
       globeNote.style.setProperty("--tilt", `${((index * 29) % 17) - 8}deg`);
-      globeNote.setAttribute("aria-label", `Listen to note ${index + 1}: ${text}`);
       const excerpt = text.length > 118 ? `${text.slice(0, 115).trimEnd()}…` : text;
       globeNote.textContent = excerpt;
-      globeNote.addEventListener("click", () => speak(text, globeNote));
       globe.append(globeNote);
     }
 
@@ -162,8 +166,6 @@ function renderArchive(items) {
   });
   archiveCount.textContent = archiveItems.length;
   archive.setAttribute("aria-busy", "false");
-  particlesCaptured = false;
-  globeParticles = [];
   updateCollectionScene();
 }
 
@@ -199,34 +201,6 @@ async function loadArchive() {
     renderArchive([...websiteNotes(), ...previewNotes.map((text, index) => ({ text, author: "notes on desire", id: `local-${index}` }))]);
     connectionNote.textContent = "Showing the saved notes preview and notes saved in this browser.";
   }
-}
-
-function loadVoices() {
-  const voices = speechSynthesis.getVoices();
-  const selected = voiceSelect.value;
-  voiceSelect.replaceChildren(new Option("System voice", ""));
-  voices.forEach((voice, index) => voiceSelect.add(new Option(`${voice.name} · ${voice.lang}`, String(index))));
-  if (selected) voiceSelect.value = selected;
-}
-
-function speak(text, card) {
-  if (!("speechSynthesis" in window)) {
-    nowSpeaking.textContent = "Speech playback is unavailable in this browser.";
-    return;
-  }
-  speechSynthesis.cancel();
-  document.querySelectorAll('.desire-card[aria-pressed="true"], .globe-note[aria-pressed="true"], .path-note[aria-pressed="true"]').forEach(note => note.setAttribute("aria-pressed", "false"));
-  card.setAttribute("aria-pressed", "true");
-  const utterance = new SpeechSynthesisUtterance(text);
-  const voiceIndex = Number(voiceSelect.value);
-  if (voiceSelect.value && speechSynthesis.getVoices()[voiceIndex]) utterance.voice = speechSynthesis.getVoices()[voiceIndex];
-  utterance.rate = Number(rateControl.value);
-  nowSpeaking.textContent = `speaking · ${text}`;
-  utterance.onend = () => {
-    card.setAttribute("aria-pressed", "false");
-    nowSpeaking.textContent = "choose a line to hear it";
-  };
-  speechSynthesis.speak(utterance);
 }
 
 async function prepareModel() {
@@ -369,10 +343,13 @@ function stopRecording() {
   void processUtterances();
 }
 
-function shareNote() {
+async function shareNote() {
   const text = transcript.value.trim();
   if (!text) return;
   const note = { id: `website-${crypto.randomUUID()}`, text, author: "website visitor", createdAt: new Date().toISOString() };
+  copyButton.disabled = true;
+  shareMessage.textContent = "Your note is dissolving into the collection…";
+  await disintegrateShareText();
   try {
     const notes = websiteNotes();
     notes.unshift(note);
@@ -380,10 +357,12 @@ function shareNote() {
     renderArchive([...notes, ...archiveItems.filter(item => !String(item.id || "").startsWith("website-"))]);
     shareMessage.textContent = "Your note has been added to this website’s collection on this device.";
     transcript.value = "";
+    transcript.classList.remove("is-disintegrating");
     sessionStorage.removeItem("shared-desires-note-draft");
-    copyButton.disabled = true;
   } catch {
+    transcript.classList.remove("is-disintegrating");
     shareMessage.textContent = "This browser could not save the note. Check available site storage and try again.";
+    copyButton.disabled = false;
   }
 }
 
@@ -418,89 +397,178 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
-function resizeParticleCanvas() {
-  particleRatio = Math.min(window.devicePixelRatio || 1, 1.5);
-  particleCanvas.width = Math.round(window.innerWidth * particleRatio);
-  particleCanvas.height = Math.round(window.innerHeight * particleRatio);
-  particleCanvas.style.width = `${window.innerWidth}px`;
-  particleCanvas.style.height = `${window.innerHeight}px`;
-  drawGlobeParticles();
+function resizeParticleCanvases() {
+  pathPixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+  sharePixelRatio = pathPixelRatio;
+  for (const canvas of [pathParticleCanvas, shareParticleCanvas]) {
+    canvas.width = Math.round(window.innerWidth * pathPixelRatio);
+    canvas.height = Math.round(window.innerHeight * pathPixelRatio);
+    canvas.style.width = `${window.innerWidth}px`;
+    canvas.style.height = `${window.innerHeight}px`;
+  }
 }
 
-function captureGlobeParticles() {
-  particlesCaptured = true;
-  globeParticles = [];
-  const labels = [...globe.querySelectorAll(".globe-note")].slice(0, 54);
-  labels.forEach((label, labelIndex) => {
-    const bounds = label.getBoundingClientRect();
-    if (bounds.width < 3 || bounds.height < 3) return;
+function makeLetterParticles(letter, startedAt) {
+  const bounds = letter.getBoundingClientRect();
+  if (!bounds.width || !bounds.height || !letter.textContent.trim()) return null;
+  const style = getComputedStyle(letter);
+  const mask = document.createElement("canvas");
+  mask.width = Math.max(1, Math.ceil(bounds.width + 2));
+  mask.height = Math.max(1, Math.ceil(bounds.height + 2));
+  const context = mask.getContext("2d", { willReadFrequently: true });
+  context.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+  context.textBaseline = "top";
+  context.fillStyle = "#ff2eab";
+  context.fillText(letter.textContent, 0, 0);
+  const pixels = context.getImageData(0, 0, mask.width, mask.height).data;
+  const points = [];
+  for (let y = 0; y < mask.height; y += 2) {
+    for (let x = 0; x < mask.width; x += 2) {
+      if (pixels[(y * mask.width + x) * 4 + 3] > 48) points.push({ x, y });
+    }
+  }
+  if (!points.length) return null;
+  const stride = Math.max(1, Math.ceil(points.length / 70));
+  const particles = points.filter((_, index) => index % stride === 0).map(point => {
+    const angle = Math.atan2(point.y - bounds.height / 2, point.x - bounds.width / 2) + (Math.random() - .5) * .8;
+    const speed = 18 + Math.random() * 60;
+    return { x: point.x, y: point.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 12, size: .7 + Math.random() * .7 };
+  });
+  return { letter, particles, startedAt, duration: 2100 };
+}
 
-    const style = getComputedStyle(label);
-    const fontSize = parseFloat(style.fontSize) || 12;
-    const lineHeight = parseFloat(style.lineHeight) || fontSize * 1.25;
-    const maskWidth = Math.max(1, Math.ceil(Math.min(label.offsetWidth || 200, 360)));
-    const mask = document.createElement("canvas");
-    const maskContext = mask.getContext("2d", { willReadFrequently: true });
-    mask.width = maskWidth;
-    mask.height = Math.ceil(Math.max(fontSize * 2, label.scrollHeight || lineHeight * 3));
-    maskContext.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-    maskContext.textBaseline = "top";
-    maskContext.fillStyle = "#ff2eab";
-    const lines = [];
+function splitPathNote(note) {
+  if (note.dataset.pathSplit) return;
+  note.dataset.pathSplit = "true";
+  const text = note.textContent;
+  const fragment = document.createDocumentFragment();
+  for (const character of Array.from(text)) {
+    const span = document.createElement("span");
+    span.className = character.trim() ? "path-letter" : "path-space";
+    span.textContent = character;
+    fragment.append(span);
+  }
+  note.replaceChildren(fragment);
+}
+
+function dissolvePathNote(note) {
+  if (note.dataset.pathDissolving) return;
+  note.dataset.pathDissolving = "true";
+  splitPathNote(note);
+  note.classList.add("path-note-dissolving");
+  const start = performance.now();
+  [...note.querySelectorAll(".path-letter")].forEach((letter, index) => {
+    const group = makeLetterParticles(letter, start + index * 20);
+    if (group) pathParticleGroups.add(group);
+    else letter.classList.add("path-letter-gone");
+  });
+  if (!pathParticleFrame) pathParticleFrame = requestAnimationFrame(paintPathParticles);
+}
+
+function paintPathParticles(now) {
+  pathParticleContext.setTransform(pathPixelRatio, 0, 0, pathPixelRatio, 0, 0);
+  pathParticleContext.clearRect(0, 0, innerWidth, innerHeight);
+  for (const group of pathParticleGroups) {
+    if (now < group.startedAt) continue;
+    const age = now - group.startedAt;
+    const progress = Math.min(age / group.duration, 1);
+    const bounds = group.letter.getBoundingClientRect();
+    const opacity = Math.pow(1 - progress, 1.45);
+    pathParticleContext.fillStyle = `rgba(255,46,171,${opacity})`;
+    for (const particle of group.particles) {
+      const flutter = Math.sin(age * .003 + particle.x) * 3;
+      pathParticleContext.fillRect(bounds.left + particle.x + particle.vx * age * .001 + flutter, bounds.top + particle.y + particle.vy * age * .001, particle.size, particle.size);
+    }
+    if (progress >= 1) {
+      group.letter.classList.add("path-letter-gone");
+      pathParticleGroups.delete(group);
+    }
+  }
+  if (pathParticleGroups.size) pathParticleFrame = requestAnimationFrame(paintPathParticles);
+  else {
+    pathParticleFrame = 0;
+    pathParticleContext.clearRect(0, 0, innerWidth, innerHeight);
+  }
+}
+
+function updatePathsOnScroll() {
+  const currentScroll = window.scrollY;
+  const scrollMovedContentUp = currentScroll > previousPathsScroll;
+  previousPathsScroll = currentScroll;
+  if (!scrollMovedContentUp || pathsMode.hidden) return;
+  pathsField.querySelectorAll(".path-note:not([data-path-dissolving])").forEach(note => {
+    const bounds = note.getBoundingClientRect();
+    if (bounds.top < innerHeight * .34 && bounds.bottom > 0) dissolvePathNote(note);
+  });
+}
+
+function particlesForTextArea(text) {
+  const bounds = transcript.getBoundingClientRect();
+  const style = getComputedStyle(transcript);
+  const fontSize = parseFloat(style.fontSize) || 26;
+  const lineHeight = parseFloat(style.lineHeight) || fontSize * 1.34;
+  const mask = document.createElement("canvas");
+  mask.width = Math.max(1, Math.ceil(bounds.width));
+  mask.height = Math.max(1, Math.ceil(bounds.height));
+  const context = mask.getContext("2d", { willReadFrequently: true });
+  context.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+  context.textBaseline = "top";
+  context.fillStyle = "#ff2eab";
+  const lines = [];
+  for (const paragraph of text.split("\n")) {
     let line = "";
-    for (const word of label.textContent.split(/\s+/)) {
+    for (const word of paragraph.split(/\s+/)) {
       const next = line ? `${line} ${word}` : word;
-      if (line && maskContext.measureText(next).width > maskWidth) {
+      if (line && context.measureText(next).width > mask.width) {
         lines.push(line);
         line = word;
       } else line = next;
     }
-    if (line) lines.push(line);
-    lines.slice(0, Math.floor(mask.height / lineHeight)).forEach((text, index) => {
-      maskContext.fillText(text, 0, index * lineHeight, maskWidth);
-    });
-
-    const pixels = maskContext.getImageData(0, 0, mask.width, mask.height).data;
-    const candidates = [];
-    for (let y = 0; y < mask.height; y += 2) {
-      for (let x = 0; x < mask.width; x += 2) {
-        if (pixels[(y * mask.width + x) * 4 + 3] > 48) candidates.push({ x, y });
-      }
+    lines.push(line);
+  }
+  lines.forEach((line, index) => context.fillText(line, 0, index * lineHeight, mask.width));
+  const pixels = context.getImageData(0, 0, mask.width, mask.height).data;
+  const points = [];
+  for (let y = 0; y < mask.height; y += 3) {
+    for (let x = 0; x < mask.width; x += 3) {
+      if (pixels[(y * mask.width + x) * 4 + 3] > 48) points.push({ x, y });
     }
-    const stride = Math.max(1, Math.ceil(candidates.length / 24));
-    const scaleX = bounds.width / mask.width;
-    const scaleY = bounds.height / mask.height;
-    for (let i = 0; i < candidates.length; i += stride) {
-      const point = candidates[i];
-      const x = bounds.left + point.x * scaleX;
-      const y = bounds.top + point.y * scaleY;
-      const angle = Math.atan2(y - innerHeight / 2, x - innerWidth / 2);
-      const seed = (labelIndex * 97 + point.x * 13 + point.y * 31) % 127;
-      globeParticles.push({
-        x, y,
-        vx: Math.cos(angle + (seed % 17 - 8) * .025) * (50 + seed * 1.45),
-        vy: Math.sin(angle + (seed % 17 - 8) * .025) * (50 + seed * 1.45),
-        size: .7 + (seed % 7) * .13
-      });
-    }
+  }
+  const stride = Math.max(1, Math.ceil(points.length / 2400));
+  return points.filter((_, index) => index % stride === 0).map(point => {
+    const angle = Math.atan2(point.y - bounds.height / 2, point.x - bounds.width / 2) + (Math.random() - .5) * .9;
+    const speed = 24 + Math.random() * 110;
+    return { x: bounds.left + point.x, y: bounds.top + point.y, vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed - 18, size: .7 + Math.random() * 1.1 };
   });
 }
 
-function drawGlobeParticles() {
-  particleContext.setTransform(particleRatio, 0, 0, particleRatio, 0, 0);
-  particleContext.clearRect(0, 0, innerWidth, innerHeight);
-  if (!globeParticles.length || globeProgress <= .05) return;
-  const progress = clamp((globeProgress - .05) / .83, 0, 1);
-  const opacity = Math.sin(progress * Math.PI) * .82;
-  particleContext.fillStyle = `rgba(255,46,171,${opacity})`;
-  for (const particle of globeParticles) {
-    particleContext.fillRect(
-      particle.x + particle.vx * progress,
-      particle.y + particle.vy * progress,
-      particle.size,
-      particle.size
-    );
-  }
+function disintegrateShareText() {
+  const particles = particlesForTextArea(transcript.value.trim());
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reducedMotion || !particles.length) return Promise.resolve();
+  transcript.classList.add("is-disintegrating");
+  shareParticleContext.setTransform(sharePixelRatio, 0, 0, sharePixelRatio, 0, 0);
+  const started = performance.now();
+  const duration = 1700;
+  return new Promise(resolve => {
+    const frame = now => {
+      shareParticleContext.clearRect(0, 0, innerWidth, innerHeight);
+      const progress = Math.min((now - started) / duration, 1);
+      shareParticleContext.fillStyle = `rgba(255,46,171,${Math.pow(1 - progress, 1.4)})`;
+      for (const particle of particles) {
+        const age = now - started;
+        const flutterX = Math.sin(age * .002 + particle.y) * 4;
+        const flutterY = Math.cos(age * .002 + particle.x) * 4;
+        shareParticleContext.fillRect(particle.x + particle.vx * age * .001 + flutterX, particle.y + particle.vy * age * .001 + flutterY, particle.size, particle.size);
+      }
+      if (progress < 1) requestAnimationFrame(frame);
+      else {
+        shareParticleContext.clearRect(0, 0, innerWidth, innerHeight);
+        resolve();
+      }
+    };
+    requestAnimationFrame(frame);
+  });
 }
 
 function updateCollectionScene() {
@@ -508,21 +576,12 @@ function updateCollectionScene() {
   const availableScroll = Math.max(1, collectionScroll.offsetHeight - innerHeight);
   globeProgress = clamp(-bounds.top / availableScroll, 0, 1);
   collectionScene.style.setProperty("--scroll-progress", globeProgress.toFixed(4));
-  collectionScene.style.setProperty("--globe-opacity", String(1 - clamp(globeProgress / .68, 0, 1)));
+  collectionScene.style.setProperty("--globe-opacity", "1");
   const edgePresence = .2 + Math.sin(globeProgress * Math.PI) * .65;
-  collectionScene.style.setProperty("--edge-opacity", String(edgePresence * clamp((1 - globeProgress) / .18, 0, 1)));
+  collectionScene.style.setProperty("--edge-opacity", String(edgePresence));
   collectionScene.style.setProperty("--hint-opacity", String(1 - clamp(globeProgress / .22, 0, 1)));
   const automaticTurn = performance.now() * .0025 * (1 - globeProgress);
   globe.style.transform = `rotateX(${globeRotationX + globeProgress * 24}deg) rotateY(${globeRotationY + automaticTurn + globeProgress * 46}deg) scale(${1 + globeProgress * .45})`;
-  if (globeProgress > .025 && !particlesCaptured && globe.children.length) captureGlobeParticles();
-  drawGlobeParticles();
-  if (globeProgress > .02 && globeProgress < .99 && !particleFrame) {
-    const animate = () => {
-      drawGlobeParticles();
-      particleFrame = globeProgress > .02 && globeProgress < .99 ? requestAnimationFrame(animate) : 0;
-    };
-    particleFrame = requestAnimationFrame(animate);
-  }
 }
 
 const globeSpace = document.querySelector("#globe-space");
@@ -551,12 +610,15 @@ globeSpace.addEventListener("pointerup", () => {
 globe.addEventListener("click", event => {
   if (globe.dataset.dragged) event.stopImmediatePropagation();
 }, true);
-window.addEventListener("scroll", updateCollectionScene, { passive: true });
+window.addEventListener("scroll", () => {
+  updateCollectionScene();
+  updatePathsOnScroll();
+}, { passive: true });
 window.addEventListener("resize", () => {
-  resizeParticleCanvas();
+  resizeParticleCanvases();
   updateCollectionScene();
 });
-resizeParticleCanvas();
+resizeParticleCanvases();
 
 history.replaceState({ viewId: currentView }, "", location.href);
 document.querySelector("#enter-archive").addEventListener("click", () => { setMode("grid"); showView("archive-view"); });
@@ -581,7 +643,6 @@ transcript.addEventListener("input", () => {
   if (transcript.value.trim()) sessionStorage.setItem("shared-desires-note-draft", transcript.value.trim());
   else sessionStorage.removeItem("shared-desires-note-draft");
 });
-voiceSelect.addEventListener("change", () => speechSynthesis.cancel());
 shareDialog.addEventListener("close", () => {
   if (listening) stopRecording();
 });
@@ -589,8 +650,4 @@ window.addEventListener("beforeunload", () => {
   micVAD?.destroy?.();
   whisper.dispose();
 });
-if ("speechSynthesis" in window) {
-  loadVoices();
-  speechSynthesis.addEventListener("voiceschanged", loadVoices);
-}
 if (currentView !== "home-view") void loadArchive();

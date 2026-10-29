@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#ffffff">
   <title>desire lines</title>
-  <link rel="stylesheet" href="style.css?v=12">
+  <link rel="stylesheet" href="style.css?v=13">
   <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.30/dist/bundle.min.js"></script>
 </head>
@@ -15,7 +15,7 @@
       <div class="welcome">
         <span>Welcome To</span>
         <strong>Shared Desires</strong>
-        <p>Shared Desires is an online platform for reflecting on personal desire and intimacy. Leave a note in a growing collection, where each voice meets and responds to another.</p>
+        <p>Shared Desires is an online platform where people are invited to take a moment and reflect on their personal desires. This platform is meant for people to record a note on their desires and intimacies and share it to the library of notes. Each note engages with one another creating it’s own language where people are can read and therefore create a note as a response, creating a link to one another in this small online corner.</p>
         <button id="enter-archive" type="button">enter the collection</button>
       </div>
     </section>
@@ -28,20 +28,12 @@
       </nav>
       <span class="sr-only" id="archive-count">—</span>
       <p class="sr-only" id="connection-note" role="status">The collection is available to browse. Live transcription is available in supported browsers.</p>
-      <p class="sr-only" id="now-speaking" aria-live="polite">choose a line to hear it</p>
-      <div class="sr-only">
-        <label for="voice-select">Spoken voice</label>
-        <select id="voice-select"><option value="">System voice</option></select>
-        <label for="rate">Speaking pace</label>
-        <input id="rate" type="range" min="0.65" max="1.3" step="0.05" value="0.9">
-      </div>
       <div class="collection-scroll mode-panel" id="globe-mode" hidden>
         <div class="collection-scene" id="collection-scene">
           <div class="edge-notes" id="edge-notes" aria-hidden="true"></div>
-          <div class="globe-space" id="globe-space" aria-label="A rotating globe of desire notes. Drag to turn it, then scroll to move through the notes.">
+          <div class="globe-space" id="globe-space" aria-label="A rotating globe of desire notes. Drag to turn it, then scroll to move through the collection.">
             <div class="globe" id="globe"></div>
           </div>
-          <canvas class="globe-particles" id="globe-particles" aria-hidden="true"></canvas>
           <p class="globe-hint">drag to turn · scroll to enter</p>
         </div>
       </div>
@@ -50,6 +42,7 @@
       </div>
       <div id="paths-mode" class="mode-panel paths-mode" hidden aria-label="Notes arranged in paths">
         <div id="paths-field" class="paths-field"></div>
+        <canvas class="path-particles" id="path-particles" aria-hidden="true"></canvas>
       </div>
     </section>
 
@@ -70,14 +63,15 @@
         <button class="record-button" id="record-start" type="button">start speaking</button>
         <button class="record-button secondary" id="record-stop" type="button" disabled>pause recording</button>
       </div>
-      <div class="writing-area"><span class="plus plus-left" aria-hidden="true">＋</span><span class="plus plus-right" aria-hidden="true">＋</span><label class="sr-only" for="transcript">Your note</label><textarea id="transcript" rows="5" placeholder="Your words will appear here as you speak…"></textarea></div>
+      <div class="writing-area"><label class="sr-only" for="transcript">Your note</label><textarea id="transcript" rows="5" placeholder="Your words will appear here as you speak…"></textarea></div>
       <div class="share-status"><span id="record-status" aria-live="polite">Your microphone is off.</span><p class="share-message" id="share-message" role="status"></p></div>
       <footer class="share-footer">
         <div class="share-footer-actions"><button class="publish-button" id="publish" type="button" disabled>share your note</button><button id="return-collection" type="button">return to collection</button></div>
         <p class="privacy-note">Your note is saved in this website’s collection on this device. It is not sent to another service. Live speech recognition may use your browser’s speech service; Whisper fallback transcribes on this device.</p>
       </footer>
+      <canvas class="share-particles" id="share-particles" aria-hidden="true"></canvas>
     </dialog>
   </main>
-  <script type="module" src="assets-build/app.js?v=12"></script>
+  <script type="module" src="assets-build/app.js?v=13"></script>
 </body>
 </html>
