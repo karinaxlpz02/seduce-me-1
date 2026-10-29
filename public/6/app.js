@@ -6,8 +6,8 @@ const modelName = "whisper-tiny";
 const modelSize = "about 120 MB";
 const ortVersion = "1.22.0";
 const vadVersion = "0.0.30";
-const intro = document.querySelector("#intro");
 const archiveView = document.querySelector("#archive-view");
+const aboutView = document.querySelector("#about-view");
 const archive = document.querySelector("#archive");
 const archiveCount = document.querySelector("#archive-count");
 const connectionNote = document.querySelector("#connection-note");
@@ -288,12 +288,19 @@ async function copyTranscript() {
   }
 }
 
-document.querySelector("#enter").addEventListener("click", () => {
-  intro.hidden = true;
-  archiveView.hidden = false;
-  loadArchive();
+document.querySelector("#about-trigger").addEventListener("click", () => {
+  archiveView.hidden = true;
+  aboutView.hidden = false;
+  window.scrollTo(0, 0);
 });
+document.querySelector("#about-home").addEventListener("click", event => {
+  event.preventDefault();
+  aboutView.hidden = true;
+  archiveView.hidden = false;
+});
+document.querySelector("#about-leave-note").addEventListener("click", () => shareDialog.showModal());
 document.querySelector("#share-trigger").addEventListener("click", () => shareDialog.showModal());
+document.querySelector("#close-share").addEventListener("click", () => shareDialog.close());
 startButton.addEventListener("click", startRecording);
 stopButton.addEventListener("click", stopRecording);
 copyButton.addEventListener("click", copyTranscript);
@@ -309,3 +316,4 @@ if ("speechSynthesis" in window) {
   loadVoices();
   speechSynthesis.addEventListener("voiceschanged", loadVoices);
 }
+loadArchive();

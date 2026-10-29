@@ -3,58 +3,51 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#f4effd">
+  <meta name="theme-color" content="#ffffff">
   <title>desire lines</title>
-  <link rel="stylesheet" href="style.css?v=2">
+  <link rel="stylesheet" href="style.css?v=4">
   <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.30/dist/bundle.min.js"></script>
 </head>
 <body>
   <main>
-    <section id="intro" class="intro" aria-labelledby="intro-title">
-      <button class="enter" id="enter" type="button" aria-label="Enter desire lines archive">
-        <span id="intro-title">desire lines</span>
-        <span class="enter-hint">click to enter <span aria-hidden="true">↘</span></span>
-      </button>
-      <p class="intro-note">a living archive of wanting, remembering, becoming</p>
-    </section>
-
-    <section id="archive-view" class="archive-view" aria-label="Desire archive" hidden>
+    <section id="archive-view" class="archive-view" aria-label="Desire archive">
       <header class="archive-header">
-        <a class="wordmark" href="#top" aria-label="Back to top">desire lines</a>
-        <p><span id="archive-count">—</span> notes gathered from <a href="https://www.are.na/karina-lopez/notes-on-are-na-about-desire" target="_blank" rel="noreferrer">Are.na</a></p>
+        <p class="archive-kicker"><span id="archive-count">—</span> notes / a living archive</p>
+        <a class="wordmark" href="#archive" aria-label="Desire lines archive">desire lines<span aria-hidden="true">↘</span></a>
+        <a class="source-link" href="https://www.are.na/karina-lopez/notes-on-are-na-about-desire" target="_blank" rel="noreferrer">collected on Are.na ↗</a>
       </header>
       <p class="connection-note" id="connection-note" role="status">The Are.na archive loads publicly. Live transcription is available in supported browsers.</p>
       <div id="archive" class="archive" aria-live="polite" aria-busy="true"></div>
       <footer class="bottom-bar">
-        <span class="now-speaking" id="now-speaking" aria-live="polite">choose a line to hear it</span>
+        <button class="now-speaking" id="now-speaking" type="button" aria-live="polite">choose a line to hear it</button>
         <div class="voice-controls">
           <label for="voice-select">voice</label>
           <select id="voice-select" aria-label="Spoken voice"><option value="">System voice</option></select>
           <label for="rate">pace</label>
           <input id="rate" type="range" min="0.65" max="1.3" step="0.05" value="0.9" aria-label="Speaking pace">
         </div>
-        <button class="share-trigger" id="share-trigger" type="button">share a desire <span aria-hidden="true">＋</span></button>
+        <div class="footer-links"><button class="share-trigger" id="share-trigger" type="button">leave a note <span aria-hidden="true">＋</span></button><button class="about-trigger" id="about-trigger" type="button">about</button></div>
       </footer>
     </section>
 
+    <section class="about-view" id="about-view" aria-labelledby="about-title" hidden>
+      <header class="about-header"><a class="wordmark" href="#archive" id="about-home">desire lines<span aria-hidden="true">↘</span></a><span class="about-label">a note about this space</span></header>
+      <div class="about-copy" id="about-title">Shared Desires is an online platform where people are invited to take a moment and reflect on their personal desire and record and leave a note on desire and intimacy, adding it to the library of notes. Each note engages with one another creating it’s own language where people are also responding to past notes, creating a link to one another in this small online corner.</div>
+      <footer class="about-footer"><button id="about-leave-note" type="button">leave a note <span aria-hidden="true">＋</span></button><span>Shared Desires / 2026</span></footer>
+    </section>
+
     <dialog id="share-dialog" class="share-dialog" aria-labelledby="share-title">
-      <form method="dialog"><button class="close-dialog" aria-label="Close">×</button></form>
-      <p class="eyebrow">a small spoken note</p>
-      <h1 id="share-title">share a desire</h1>
-      <p class="share-instructions">Say anything you want to leave here. In supported browsers, words appear as you say them. If live recognition isn’t available, on-device Whisper transcribes after each pause.</p>
-      <div class="record-status" id="record-status" aria-live="polite">Your microphone is off.</div>
+      <header class="share-header"><button class="close-dialog" id="close-share" type="button">close <span aria-hidden="true">×</span></button></header>
       <div class="record-actions">
-        <button class="record-button" id="record-start" type="button"><span aria-hidden="true">●</span> start speaking</button>
-        <button class="record-button secondary" id="record-stop" type="button" disabled>finish recording</button>
+        <button class="record-button" id="record-start" type="button">start speaking</button>
+        <button class="record-button secondary" id="record-stop" type="button" disabled>pause recording</button>
       </div>
-      <label class="transcript-label" for="transcript">your words <span>live text · editable</span></label>
-      <textarea id="transcript" rows="5" placeholder="Your words will appear here as you speak…"></textarea>
-      <button class="publish-button" id="publish" type="button" disabled>copy transcript <span aria-hidden="true">⧉</span></button>
-      <p class="share-message" id="share-message" role="status"></p>
-      <p class="privacy-note">Live recognition uses your browser’s speech service, which may process audio outside this device. When live recognition isn’t supported, Whisper transcribes on-device after a pause and downloads its model the first time (about 120 MB). Nothing is sent to Are.na.</p>
+      <div class="writing-area"><span class="plus plus-left" aria-hidden="true">＋</span><span class="plus plus-right" aria-hidden="true">＋</span><label class="sr-only" for="transcript">Your note</label><textarea id="transcript" rows="5" placeholder="Your words will appear here as you speak…"></textarea></div>
+      <div class="share-status"><span id="record-status" aria-live="polite">Your microphone is off.</span><p class="share-message" id="share-message" role="status"></p></div>
+      <footer class="share-footer"><button class="publish-button" id="publish" type="button" disabled>share your note</button><p class="privacy-note">Your note is copied to your clipboard. It is not sent to the archive. Live speech recognition may use your browser’s speech service; Whisper fallback transcribes on this device.</p></footer>
     </dialog>
   </main>
-  <script type="module" src="assets-build/app.js?v=3"></script>
+  <script type="module" src="assets-build/app.js?v=4"></script>
 </body>
 </html>
