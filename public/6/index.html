@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#ffffff">
   <title>desire lines</title>
-  <link rel="stylesheet" href="style.css?v=5">
+  <link rel="stylesheet" href="style.css?v=6">
   <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.30/dist/bundle.min.js"></script>
 </head>
@@ -37,12 +37,13 @@
 
     <footer class="bottom-bar" id="site-footer">
       <button class="share-trigger" id="share-trigger" type="button">leave a note</button>
+      <button class="collection-trigger" id="collection-trigger" type="button">collection</button>
       <button class="about-trigger" id="about-trigger" type="button">about</button>
     </footer>
 
     <dialog id="share-dialog" class="share-dialog" aria-labelledby="share-title">
       <h1 class="sr-only" id="share-title">Share a note</h1>
-      <header class="share-header"><button class="close-dialog" id="close-share" type="button">close <span aria-hidden="true">×</span></button></header>
+      <header class="share-header"><button class="close-dialog" id="close-share" type="button">close</button></header>
       <div class="record-actions">
         <button class="record-button" id="record-start" type="button">start speaking</button>
         <button class="record-button secondary" id="record-stop" type="button" disabled>pause recording</button>
@@ -52,6 +53,6 @@
       <footer class="share-footer"><button class="publish-button" id="publish" type="button" disabled>share your note</button><p class="privacy-note">Your note is copied to your clipboard. It is not sent to the archive. Live speech recognition may use your browser’s speech service; Whisper fallback transcribes on this device.</p></footer>
     </dialog>
   </main>
-  <script type="module" src="assets-build/app.js?v=5"></script>
+  <script type="module" src="assets-build/app.js?v=6"></script>
 </body>
 </html>

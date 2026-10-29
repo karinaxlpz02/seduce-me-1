@@ -322,6 +322,7 @@ function showView(viewId, pushHistory = true) {
 
 history.replaceState({ viewId: currentView }, "", location.href);
 document.querySelector("#enter-archive").addEventListener("click", () => showView("archive-view"));
+document.querySelector("#collection-trigger").addEventListener("click", () => showView("archive-view"));
 document.querySelector("#about-trigger").addEventListener("click", () => {
   showView(currentView === "about-view" ? "home-view" : "about-view");
 });
