@@ -141,3 +141,4 @@ button { cursor: pointer; }
 
 .welcome button, .mode-nav button, .bottom-bar button, .record-button, .publish-button, #return-collection { padding: 5px 8px 10px; border-radius: 2px; background: #fff; font-size: calc(.78rem + 2pt + 2px); }
 #publish, #return-collection { min-height: 2.9rem; margin: .5rem 0; padding: 5px 8px 10px; }
+#record-start { padding: 0 10px 10px; }
