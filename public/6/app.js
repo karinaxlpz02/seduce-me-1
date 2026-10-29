@@ -485,6 +485,7 @@ function dissolvePathNote(note) {
   note.classList.add("path-note-dissolving");
   const start = performance.now();
   [...note.querySelectorAll(".path-letter")].forEach((letter, index) => {
+    letter.style.transitionDelay = `${index * 20}ms`;
     const group = makeLetterParticles(letter, start + index * 20);
     if (group) pathParticleGroups.add(group);
     else letter.classList.add("path-letter-gone");
