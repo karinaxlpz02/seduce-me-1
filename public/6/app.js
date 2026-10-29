@@ -102,13 +102,6 @@ function renderArchive(items) {
   });
   archive.replaceChildren();
   pathsField.replaceChildren();
-  const pathLanes = Array.from({ length: 3 }, (_, index) => {
-    const lane = document.createElement("div");
-    lane.className = "path-lane";
-    lane.dataset.lane = String(index);
-    pathsField.append(lane);
-    return lane;
-  });
   globe.replaceChildren();
   edgeNotes.replaceChildren();
   if (!archiveItems.length) {
@@ -138,12 +131,13 @@ function renderArchive(items) {
     pathNote.className = "path-note";
     pathNote.textContent = pathText;
     pathNote.dataset.pathNote = "true";
-    pathNote.style.setProperty("--path-tilt", `${Math.round(Math.random() * 12 - 6)}deg`);
-    pathNote.style.setProperty("--path-width", `${58 + Math.round(Math.random() * 42)}%`);
+    const width = 52 + Math.round(Math.random() * 48);
+    const maxOffset = Math.max(0, 94 - width);
+    pathNote.style.setProperty("--path-tilt", `${width >= 90 ? 0 : Math.round(Math.random() * 8 - 4)}deg`);
+    pathNote.style.setProperty("--path-width", `${width}%`);
     pathNote.style.marginBlockStart = `${Math.round(Math.random() * 100)}px`;
-    pathNote.style.marginInlineStart = `${Math.round(Math.random() * 18)}%`;
-    const lane = pathLanes[Math.floor(Math.random() * pathLanes.length)];
-    lane.append(pathNote);
+    pathNote.style.marginInlineStart = `${Math.round(Math.random() * maxOffset)}%`;
+    pathsField.append(pathNote);
 
     if (index < 54) {
       const count = Math.min(54, archiveItems.length);

@@ -49,8 +49,7 @@ button { cursor: pointer; }
 .grid-field { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; column-gap: clamp(1.5rem, 5vw, 5rem); row-gap: clamp(2.3rem, 5vw, 5rem); padding-top: 2rem; }
 .grid-field .desire-card { width: 100%; max-width: none !important; margin: 0 !important; align-self: stretch; text-align: left !important; font-size: calc(clamp(.95rem, 1.2vw, 1.15rem) + 2pt + 2px); line-height: 1.22; transform: none; }
 .paths-mode { padding: 2.5rem var(--gutter) 6rem; }
-.paths-field { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(2rem, 8vw, 8rem); max-width: 1500px; margin: 0 auto; }
-.path-lane { min-width: 0; display: flex; flex-direction: column; gap: clamp(1rem, 3vw, 3rem); padding-top: 0; }
+.paths-field { position: relative; display: flex; flex-direction: column; gap: clamp(1rem, 3vw, 3rem); width: 100%; max-width: 1500px; margin: 0 auto; }
 .path-note { width: min(var(--path-width, 100%), 100%); max-width: 100%; overflow-wrap: anywhere; padding: 0; border: 0; background: transparent; color: var(--pink); text-align: left; font-size: calc(clamp(.9rem, 1.1vw, 1.05rem) + 2pt + 2px); line-height: 1.22; letter-spacing: -.025em; transform: rotate(var(--path-tilt, 0deg)); }
 .path-note-dissolving .path-letter { opacity: 0; transition: opacity .75s ease-out; }
 .path-letter { display: inline-block; }
@@ -121,8 +120,7 @@ button { cursor: pointer; }
   .archive { padding-top: 2rem; }
   .grid-field { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 1.4rem; row-gap: 2.5rem; }
   .grid-field .desire-card { font-size: calc(.92rem + 2pt + 2px); }
-  .paths-field { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.4rem; }
-  .path-lane { gap: 3.5rem; }
+  .paths-field { gap: 1.4rem; }
   .mode-nav { min-height: 2.8rem; }
   .mode-nav { gap: 25px; }
   .archive { gap: .55rem; }
@@ -143,4 +141,4 @@ button { cursor: pointer; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
 
-.welcome button, .mode-nav button, .bottom-bar button, .close-dialog, .record-button, .publish-button, #return-collection { padding: 13px 8px 8px; border-radius: 2px; background: #fff; font-size: calc(.78rem + 2pt + 2px); }
+.welcome button, .mode-nav button, .bottom-bar button, .close-dialog, .record-button, .publish-button, #return-collection { padding: 10px 8px 9px; border-radius: 2px; background: #fff; font-size: calc(.78rem + 2pt + 2px); }
